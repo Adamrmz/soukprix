@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SoukPrix</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f8f5b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SoukPrix">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --paper:#ffffff;
+    --surface:#f6faf7;
+    --ink:#16261c;
+    --ink-soft:#4f6358;
+    --ink-faint:#8ea296;
+    --line:#dce8e0;
+    --line-strong:#c2d6c9;
+    --accent:#2f8f5b;
+    --accent-ink:#ffffff;
+    --teal:#1b6b4c;
+    --teal-soft:#e3f3ea;
+    --teal-ink:#0d4530;
+    --gold:#a5761f;
+    --gold-soft:#f6ecd3;
+    --danger:#b3261e;
+    --danger-soft:#fbe9e7;
+    --shadow: 0 1px 2px rgba(22,38,28,0.05), 0 8px 24px -12px rgba(22,38,28,0.16);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0f1613;
+      --surface:#16211c;
+      --ink:#e7f2ea;
+      --ink-soft:#a9bdb0;
+      --ink-faint:#71877a;
+      --line:#2a3830;
+      --line-strong:#37473d;
+      --accent:#4fbf82;
+      --accent-ink:#0f1613;
+      --teal:#4fd3a4;
+      --teal-soft:#173a2c;
+      --teal-ink:#c8f3df;
+      --gold:#d9ac54;
+      --gold-soft:#3a2f18;
+      --danger:#ff8a80;
+      --danger-soft:#3a1f1c;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0f1613;
+    --surface:#16211c;
+    --ink:#e7f2ea;
+    --ink-soft:#a9bdb0;
+    --ink-faint:#71877a;
+    --line:#2a3830;
+    --line-strong:#37473d;
+    --accent:#4fbf82;
+    --accent-ink:#0f1613;
+    --teal:#4fd3a4;
+    --teal-soft:#173a2c;
+    --teal-ink:#c8f3df;
+    --gold:#d9ac54;
+    --gold-soft:#3a2f18;
+    --danger:#ff8a80;
+    --danger-soft:#3a1f1c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.5);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  ::selection{ background:var(--gold-soft); color:var(--ink); }
+  a{ color:inherit; }
+  button{ font-family:inherit; touch-action:manipulation; }
+  input, select, textarea{ touch-action:manipulation; }
+  @media (max-width:480px){
+    .field input, .search input{ font-size:16px; }
+  }
+  svg.icon{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  [hidden]{ display:none !important; }
+
+  h1,h2,h3{ font-family:'Fraunces',Georgia,serif; font-weight:600; text-wrap:balance; margin:0; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 20px; }
+
+  /* ---- auth gate ---- */
+  #authGate{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .auth-card{
+    width:100%; max-width:380px; background:var(--surface); border:1px solid var(--line);
+    border-radius:16px; box-shadow:var(--shadow); padding:32px 30px 28px;
+  }
+  .auth-brand{ display:flex; align-items:baseline; gap:2px; justify-content:center; margin-bottom:6px; }
+  .auth-brand h1{ font-size:1.6rem; }
+  .auth-brand h1 em{ font-style:italic; color:var(--accent); }
+  .auth-sub{ text-align:center; font-size:0.85rem; color:var(--ink-soft); margin-bottom:22px; }
+  .auth-tabs{ display:flex; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:3px; margin-bottom:20px; }
+  .auth-tab{
+    flex:1; background:none; border:none; padding:8px 0; border-radius:8px; font-size:0.85rem; font-weight:600;
+    color:var(--ink-soft); cursor:pointer;
+  }
+  .auth-tab.active{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label{ font-size:0.76rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; }
+  .field input{
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); border-radius:9px;
+    padding:11px 13px; font-size:0.92rem; font-family:inherit; outline:none; width:100%;
+  }
+  .field input:focus{ border-color:var(--accent); }
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-right:42px; }
+  .pw-toggle{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none;
+    color:var(--ink-faint); cursor:pointer; padding:6px; display:flex; align-items:center; justify-content:center;
+  }
+  .pw-toggle:hover{ color:var(--ink-soft); }
+  .forgot-link{
+    background:none; border:none; color:var(--ink-soft); font-size:0.78rem; cursor:pointer; margin-top:12px;
+    text-decoration:underline; text-underline-offset:2px; display:block; text-align:center; width:100%;
+  }
+  .forgot-link:hover{ color:var(--accent); }
+  .auth-submit{
+    width:100%; background:var(--accent); color:var(--accent-ink); border:none; border-radius:9px;
+    padding:12px 0; font-size:0.92rem; font-weight:600; cursor:pointer; margin-top:6px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .auth-submit:disabled{ opacity:0.6; cursor:default; }
+  .spinner{
+    width:16px; height:16px; border-radius:999px; border:2px solid rgba(255,255,255,0.4);
+    border-top-color:currentColor; animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .auth-loading{ display:flex; align-items:center; justify-content:center; padding:60px 0; color:var(--ink-faint); }
+  .auth-loading .spinner{ border:2px solid var(--line-strong); border-top-color:var(--accent); width:26px; height:26px; }
+  .auth-msg{ font-size:0.8rem; margin-top:14px; padding:10px 12px; border-radius:8px; line-height:1.5; }
+  .auth-msg.error{ background:var(--danger-soft); color:var(--danger); }
+  .auth-msg.info{ background:var(--teal-soft); color:var(--teal-ink); }
+
+  .guest-divider{ display:flex; align-items:center; gap:10px; margin:18px 0 14px; color:var(--ink-faint); font-size:0.76rem; }
+  .guest-divider::before, .guest-divider::after{ content:""; flex:1; height:1px; background:var(--line); }
+  .guest-btn{
+    width:100%; background:none; border:1px solid var(--line-strong); color:var(--ink-soft); border-radius:9px;
+    padding:11px 0; font-size:0.86rem; font-weight:600; cursor:pointer;
+  }
+  .guest-btn:hover{ border-color:var(--accent); color:var(--ink); }
+
+  .guest-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--gold-soft); color:var(--gold); border-radius:10px; padding:10px 16px; margin-bottom:18px;
+    font-size:0.82rem; font-weight:500;
+  }
+  .guest-banner button{
+    background:var(--ink); color:var(--paper); border:none; border-radius:999px; padding:7px 14px;
+    font-size:0.78rem; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .guest-cta{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+
+  /* nav */
+  .site-nav{
+    position:sticky; top:0; z-index:30;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{ display:flex; align-items:center; gap:20px; padding:calc(13px + env(safe-area-inset-top)) 0 13px; }
+  .brand{ display:flex; align-items:baseline; gap:10px; flex-shrink:0; }
+  .site-nav .brand h1{ font-size:1.35rem; color:var(--ink); letter-spacing:-0.01em; }
+  .brand h1 em{ font-style:italic; color:var(--accent); }
+  .nav-links{ display:flex; gap:2px; overflow-x:auto; }
+  .nav-link{
+    background:none; border:none; color:var(--ink-soft); font-size:0.86rem; font-weight:500;
+    padding:8px 13px; border-radius:8px; cursor:pointer; white-space:nowrap;
+  }
+  .nav-link:hover{ color:var(--ink); background:var(--surface); }
+  .nav-link.active{ color:var(--ink); background:var(--surface); font-weight:600; box-shadow:inset 0 0 0 1px var(--line); }
+  .cart-pill{
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+    background:var(--ink); color:var(--paper); border:none; border-radius:999px;
+    padding:9px 16px 9px 14px; font-size:0.85rem; font-weight:600; cursor:pointer;
+  }
+  .cart-pill .count{
+    background:var(--accent); color:var(--accent-ink); border-radius:999px; min-width:20px; height:20px;
+    display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; padding:0 5px;
+    font-family:'IBM Plex Mono',monospace; transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .cart-pill .count.bump{ transform:scale(1.45); }
+  @media (prefers-reduced-motion:reduce){ .cart-pill .count{ transition:none; } }
+  .nav-right{ margin-left:auto; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .theme-toggle{
+    width:36px; height:36px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface);
+    color:var(--ink-soft); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .theme-toggle:hover{ border-color:var(--accent); color:var(--ink); }
+  .theme-toggle .icon{ width:17px; height:17px; }
+  .user-chip{ display:flex; align-items:center; gap:8px; }
+  .user-email{ font-size:0.78rem; color:var(--ink-soft); max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .logout-btn{
+    background:none; border:1px solid var(--line-strong); color:var(--ink-soft); border-radius:999px;
+    padding:6px 12px; font-size:0.76rem; cursor:pointer;
+  }
+  .logout-btn:hover{ border-color:var(--accent); color:var(--ink); }
+  @media (max-width:760px){
+    .nav-inner{ flex-wrap:wrap; }
+    .nav-right{ order:1; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; row-gap:8px; }
+    .nav-links{ order:2; width:100%; }
+    .user-email{ display:none; }
+  }
+  @media (max-width:480px){
+    .guest-cta{ display:none; }
+  }
+
+  main{ padding:26px 0 80px; }
+  .page{ display:none; }
+  .page.active{ display:block; animation:pagefade .28s ease; }
+  @keyframes pagefade{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); padding:12px 22px; border-radius:999px; font-size:0.85rem;
+    font-weight:500; box-shadow:var(--shadow); opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; z-index:200; max-width:88vw; text-align:center;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* hero */
+  .hero{
+    position:relative; border-radius:18px; overflow:hidden; min-height:340px;
+    display:flex; align-items:flex-end; background:var(--ink);
+  }
+  .hero img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(18,13,7,0.08) 0%, rgba(18,13,7,0.82) 100%);
+  }
+  .hero-content{ position:relative; z-index:1; padding:36px 34px 32px; color:#fbf3e4; max-width:660px; }
+  .hero-content h1{ font-size:clamp(1.7rem,3.2vw,2.5rem); color:#fbf3e4; }
+  .hero-content p{ font-size:0.96rem; opacity:.92; margin-top:12px; max-width:54ch; line-height:1.6; }
+  .hero-cta-row{ display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; }
+  .btn-primary, .btn-secondary{
+    border-radius:999px; padding:12px 22px; font-weight:600; font-size:0.88rem; cursor:pointer; border:none;
+  }
+  .btn-primary{ background:var(--accent); color:var(--accent-ink); }
+  .btn-secondary{ background:rgba(255,255,255,0.14); color:#fbf3e4; border:1px solid rgba(255,255,255,0.45); }
+  @media (max-width:640px){
+    .hero{ min-height:260px; }
+    .hero-content{ padding:24px 22px 26px; }
+  }
+
+  /* home stats + category grid */
+  .stats-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:26px 0 6px; }
+  .stat-tile{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .stat-num{ font-family:'IBM Plex Mono',monospace; font-size:1.7rem; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .stat-label{ font-size:0.76rem; color:var(--ink-soft); margin-top:4px; }
+  @media (max-width:700px){ .stats-row{ grid-template-columns:1fr; } }
+
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:34px 0 14px; flex-wrap:wrap; }
+  .section-head h2{ font-size:1.25rem; }
+
+  .preset-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:800px){ .preset-grid{ grid-template-columns:1fr; } }
+  .preset-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:5px; font-family:inherit;
+  }
+  .preset-card:hover{ border-color:var(--accent); }
+  .preset-card strong{ font-size:0.95rem; color:var(--ink); font-weight:600; }
+  .preset-card span{ font-size:0.78rem; color:var(--ink-soft); line-height:1.5; }
+
+  .cat-count{ display:block; font-weight:400; font-size:0.72rem; opacity:.85; margin-top:2px; }
+
+  .greeting{ display:flex; align-items:center; gap:8px; font-size:1rem; color:var(--ink-soft); margin:22px 0 2px; }
+  .greeting .wave{ font-size:1.3rem; }
+  .greeting b{ color:var(--ink); font-weight:700; }
+
+  .quickcats{ display:flex; gap:18px; overflow-x:auto; padding:14px 2px 12px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+  .quickcat{ scroll-snap-align:start; }
+  .quickcat{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:0 0 auto; background:none; border:none; cursor:pointer; width:70px; font-family:inherit; }
+  .quickcat-badge{
+    width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:var(--teal-soft); color:var(--teal-ink); flex-shrink:0; transition:transform .15s ease;
+  }
+  .quickcat:nth-child(3n+2) .quickcat-badge{ background:var(--gold-soft); color:var(--gold); }
+  .quickcat:nth-child(3n) .quickcat-badge{ background:var(--surface); border:1px solid var(--line-strong); color:var(--ink-soft); }
+  .quickcat:hover .quickcat-badge{ transform:translateY(-4px); }
+  .quickcat-badge svg{ width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .quickcat-label{ font-size:0.7rem; color:var(--ink-soft); text-align:center; line-height:1.25; }
+
+  .chip-icon{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-2px; margin-right:5px; }
+
+  .cat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media (max-width:900px){ .cat-grid{ grid-template-columns:repeat(2,1fr); } }
+  .cat-card{
+    position:relative; border-radius:14px; overflow:hidden; height:150px; cursor:pointer; border:none; padding:0;
+    display:flex; align-items:flex-end; text-align:left;
+  }
+  .cat-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .35s ease; }
+  .cat-card:hover img{ transform:scale(1.06); }
+  .cat-card::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(18,13,7,0.05), rgba(18,13,7,0.8)); }
+  .cat-card span{ position:relative; z-index:1; display:block; padding:14px 16px; color:#fbf3e4; font-weight:600; font-size:0.95rem; }
+
+  .panel-label{
+    font-size:0.72rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-faint); font-weight:600;
+    margin:0 0 10px;
+  }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:999px;
+    padding:9px 16px; min-width:220px; flex:1 1 240px;
+    color:var(--ink-soft);
+  }
+  .search input{ border:none; outline:none; background:none; color:var(--ink); font-size:0.9rem; width:100%; font-family:inherit; }
+  .search input::placeholder{ color:var(--ink-faint); }
+
+  .chips{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; margin-bottom:16px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+  .chips::-webkit-scrollbar{ height:5px; }
+  .chips::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:99px; }
+  .chip{
+    flex:0 0 auto; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-soft);
+    padding:7px 14px; border-radius:999px; font-size:0.82rem; cursor:pointer; white-space:nowrap;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip:hover{ border-color:var(--accent); color:var(--ink); }
+  .chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+
+  .sort-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 14px; }
+  .sort-row .sort-label{ font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faint); font-weight:600; margin-right:2px; }
+  .toggle-chip{
+    flex:0 0 auto; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-soft);
+    padding:7px 14px 7px 12px; border-radius:999px; font-size:0.82rem; cursor:pointer; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .toggle-chip:hover{ border-color:var(--accent); color:var(--ink); }
+  .toggle-chip .dot{ width:8px; height:8px; border-radius:999px; background:var(--line-strong); flex-shrink:0; }
+  .toggle-chip.active{ background:var(--teal-soft); border-color:var(--teal); color:var(--teal-ink); font-weight:600; }
+  .toggle-chip.active .dot{ background:var(--teal); }
+
+  /* table */
+  .table-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
+  .table-scroll{ overflow-x:auto; }
+  table{ border-collapse:collapse; width:100%; min-width:640px; }
+  thead th{
+    position:sticky; top:64px; background:var(--surface); z-index:2;
+    text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-faint);
+    padding:14px 14px 10px; border-bottom:1px solid var(--line); font-weight:600;
+  }
+  thead th.store-h{ text-align:center; }
+  thead th:first-child{ position:sticky; left:0; z-index:3; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tr.cat-row td{
+    background:var(--paper); color:var(--ink-soft); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em;
+    font-weight:600; padding:9px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center;
+  }
+  tr.product-row:hover td{ background:color-mix(in srgb, var(--accent) 5%, transparent); }
+  td.name-cell{
+    position:sticky; left:0; background:var(--surface); min-width:236px;
+    box-shadow: 1px 0 0 var(--line);
+  }
+  tr.product-row:hover td.name-cell{ background:color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+  .name-flex{ display:flex; align-items:center; gap:10px; }
+  .p-name{ font-weight:500; color:var(--ink); font-size:0.9rem; }
+  .p-unit{ font-size:0.72rem; color:var(--ink-faint); }
+
+  .cat-icon-tile{
+    width:34px; height:34px; border-radius:9px; flex-shrink:0;
+    background:var(--paper); border:1px solid var(--line);
+    display:inline-flex; align-items:center; justify-content:center; color:var(--ink-soft);
+  }
+  .cat-icon-tile svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  tr.cat-row .cat-icon-tile{ width:20px; height:20px; border:none; background:none; color:var(--ink-soft); margin-right:6px; }
+  tr.cat-row .cat-icon-tile svg{ width:14px; height:14px; }
+  .prod-photo-wrap{
+    width:34px; height:34px; border-radius:9px; flex-shrink:0;
+    background:#fff; border:1px solid var(--line); overflow:hidden;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .prod-photo{ width:100%; height:100%; object-fit:contain; }
+
+  td.price-cell{ text-align:center; min-width:96px; }
+  .price{ font-family:'IBM Plex Mono',monospace; font-size:0.92rem; font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .price-cell.best .price{ color:var(--teal-ink); font-weight:600; }
+  .price-cell.best{ background:var(--teal-soft); position:relative; }
+  .price-cell .dash{ color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+  .save-tag{ display:block; margin-top:2px; font-size:0.64rem; font-weight:700; color:var(--gold); letter-spacing:0.02em; }
+  .price-main{ display:flex; flex-direction:column; align-items:center; }
+  .unit-price{ display:block; font-size:0.64rem; color:var(--ink-faint); margin-top:1px; font-variant-numeric:tabular-nums; }
+  .price-cell.best .unit-price{ color:var(--teal-ink); opacity:0.75; }
+  .variant-row{ display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; max-width:220px; }
+  .variant-chip{
+    font-size:0.66rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line-strong);
+    background:var(--paper); color:var(--ink-soft); cursor:pointer; white-space:nowrap; font-family:inherit;
+  }
+  .variant-chip:hover{ border-color:var(--accent); color:var(--ink); }
+  .variant-chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+  .fav-btn{ background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:4px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:auto; }
+  .fav-btn svg{ width:18px; height:18px; }
+  .fav-btn:hover{ color:var(--gold); }
+  .fav-btn.active{ color:var(--gold); }
+  .live-dot{
+    display:inline-block; width:6px; height:6px; border-radius:999px; background:var(--teal);
+    margin-left:4px; vertical-align:middle; box-shadow:0 0 0 2px var(--teal-soft);
+  }
+  .live-note{ font-size:0.68rem; color:var(--teal-ink); background:var(--teal-soft); border-radius:6px; padding:2px 7px; display:inline-block; margin-top:10px; }
+
+  td.add-cell{ text-align:center; min-width:90px; }
+  .add-btn{
+    width:30px; height:30px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface);
+    color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .add-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .qty-stepper{ display:inline-flex; align-items:center; gap:8px; background:var(--paper); border:1px solid var(--line-strong); border-radius:999px; padding:3px 6px; }
+  .qty-stepper button{ width:22px; height:22px; border-radius:999px; border:none; background:var(--surface); color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .qty-stepper button:hover{ background:var(--accent); color:var(--accent-ink); }
+  .qty-stepper .n{ font-family:'IBM Plex Mono',monospace; font-size:0.82rem; min-width:14px; text-align:center; }
+
+  .empty-row td{ padding:34px 14px; text-align:center; color:var(--ink-faint); font-size:0.88rem; }
+
+  /* ma liste page */
+  .layout{ display:grid; grid-template-columns:1fr 340px; gap:26px; align-items:start; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
+
+  .items-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:20px 22px 16px; }
+  .cart-items{ display:flex; flex-direction:column; }
+  .cart-item{ padding:9px 0; border-bottom:1px dashed var(--line); }
+  .cart-item:last-child{ border-bottom:none; }
+  .cart-item-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .cart-item-name{ font-size:0.87rem; color:var(--ink); }
+  .cart-item-cheapest{ font-size:0.66rem; color:var(--teal-ink); background:var(--teal-soft); padding:1px 6px; border-radius:5px; margin-top:3px; display:inline-block; }
+  .cart-item-controls{ display:flex; align-items:center; gap:6px; }
+  .cart-item .qty-stepper button{ width:19px; height:19px; }
+  .no-items{ font-size:0.85rem; color:var(--ink-faint); padding:16px 0; text-align:center; }
+  .receipt-actions{ margin-top:12px; display:flex; justify-content:space-between; gap:10px; }
+  .clear-link{ background:none; border:none; color:var(--ink-faint); font-size:0.76rem; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+  .clear-link:hover{ color:var(--accent); }
+
+  .receipt{
+    position:sticky; top:84px;
+    background:var(--surface); border:1px solid var(--line); border-radius:2px;
+    box-shadow:var(--shadow); padding:22px 20px 18px;
+  }
+  .receipt::before{
+    content:""; position:absolute; top:-7px; left:0; width:100%; height:14px;
+    background-image:radial-gradient(circle at 7px 7px, var(--paper) 7px, transparent 7.5px);
+    background-size:14px 14px; background-repeat:repeat-x; background-position:0 0;
+  }
+  .receipt-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+  .receipt-head h2{ font-size:1.05rem; }
+
+  .totals{ display:flex; flex-direction:column; gap:6px; }
+  .total-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 9px; border-radius:8px; }
+  .total-row.best{ background:var(--teal-soft); }
+  .total-store{ display:flex; flex-direction:column; }
+  .total-store .sname{ font-size:0.82rem; font-weight:500; color:var(--ink); }
+  .total-row.best .sname{ color:var(--teal-ink); font-weight:700; }
+  .total-store .miss{ font-size:0.65rem; color:var(--ink-faint); }
+  .total-amt{ font-family:'IBM Plex Mono',monospace; font-size:0.98rem; font-weight:600; font-variant-numeric:tabular-nums; }
+  .total-row.best .total-amt{ color:var(--teal-ink); }
+  .ribbon{ font-size:0.6rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--teal-ink); }
+  .no-totals{ font-size:0.82rem; color:var(--ink-faint); }
+
+  .savings-call{
+    margin-top:12px; background:var(--gold-soft); color:var(--gold); border-radius:8px; padding:10px 12px;
+    font-size:0.8rem; font-weight:600; line-height:1.4;
+  }
+  .savings-call b{ font-family:'IBM Plex Mono',monospace; }
+
+  /* enseignes page */
+  .store-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media (max-width:700px){ .store-grid{ grid-template-columns:1fr; } }
+  .store-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:var(--shadow); }
+  .store-mono{
+    width:46px; height:46px; border-radius:12px; background:var(--paper); border:1px solid var(--line-strong);
+    display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700;
+    font-size:1.2rem; color:var(--accent); margin-bottom:14px;
+  }
+  .store-card h3{ font-size:1.1rem; margin-bottom:4px; }
+  .store-tag-row{ display:flex; gap:8px; margin:8px 0 12px; flex-wrap:wrap; }
+  .store-tag{
+    font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; background:var(--paper);
+    border:1px solid var(--line); padding:4px 9px; border-radius:999px; color:var(--ink-soft); font-weight:600;
+  }
+  .store-card p{ font-size:0.86rem; color:var(--ink-soft); line-height:1.6; margin:0; }
+
+  .basket-chart{ display:flex; flex-direction:column; gap:11px; margin-bottom:8px; }
+  .basket-row{ display:grid; grid-template-columns:112px 1fr auto; align-items:center; gap:12px; }
+  .basket-label{ font-size:0.82rem; color:var(--ink-soft); font-weight:500; }
+  .basket-bar-wrap{ background:var(--line); border-radius:999px; height:10px; overflow:hidden; }
+  .basket-bar{ height:100%; background:var(--accent); border-radius:999px; transition:width .5s ease; }
+  .basket-row.best .basket-bar{ background:var(--teal); }
+  .basket-row.best .basket-label{ color:var(--teal-ink); font-weight:700; }
+  .basket-amt{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; font-weight:600; min-width:84px; text-align:right; font-variant-numeric:tabular-nums; }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;
+  }
+
+  @media print{
+    .site-nav, .hero, .guest-banner, #toast, .receipt-actions, .theme-toggle{ display:none !important; }
+    body{ background:#fff; color:#000; }
+  }
+
+  footer{ padding:26px 0 50px; }
+  .note{ font-size:0.76rem; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:16px; line-height:1.6; max-width:75ch; }
+
+  @media (max-width:640px){
+    .receipt{ position:static; top:auto; }
+  }
+
+  /* mobile: table becomes stacked cards */
+  @media (max-width:680px){
+    table{ min-width:0; }
+    thead{ display:none; }
+    tbody, tr.product-row, td{ display:block; width:100%; }
+    tr.cat-row{ border-radius:10px; }
+    tr.cat-row td{ padding:9px 12px; }
+    tr.product-row{
+      border:1px solid var(--line); border-radius:12px; margin:0 0 10px; padding:2px 14px 6px;
+      background:var(--surface); box-shadow:var(--shadow);
+    }
+    tr.product-row:hover td{ background:none; }
+    td.name-cell{ position:static; box-shadow:none; background:none; padding:12px 0 10px; border-bottom:1px dashed var(--line); }
+    tr.product-row:hover td.name-cell{ background:none; }
+    td.price-cell, td.add-cell{
+      display:flex; align-items:center; justify-content:space-between; text-align:left;
+      padding:9px 0; border-bottom:1px dashed var(--line); min-width:0;
+    }
+    .price-main{ align-items:flex-end; }
+    .variant-row{ max-width:none; }
+    td.price-cell::before, td.add-cell::before{
+      content:attr(data-label); font-size:0.72rem; color:var(--ink-faint); text-transform:uppercase;
+      letter-spacing:0.04em; font-weight:600;
+    }
+    td.price-cell.best{ border-radius:8px; padding:9px 8px; margin:0 -8px; }
+    td.add-cell{ border-bottom:none; padding-bottom:12px; }
+    td.add-cell .add-btn{ width:38px; height:38px; }
+    td.add-cell .qty-stepper{ padding:5px 8px; }
+    td.add-cell .qty-stepper button{ width:28px; height:28px; }
+    .cart-item .qty-stepper button{ width:26px; height:26px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="authGate">
+  <div class="auth-loading" id="authLoading"><div class="spinner"></div></div>
+  <div class="auth-card" id="authCard" hidden>
+    <div class="auth-brand"><h1>Souk<em>Prix</em></h1></div>
+    <p class="auth-sub" id="authSub">Connecte-toi pour retrouver ta liste de courses sur tous tes appareils.</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login" type="button">Se connecter</button>
+      <button class="auth-tab" data-tab="signup" type="button">Créer un compte</button>
+    </div>
+    <form id="authForm">
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" required placeholder="toi@exemple.com">
+      </div>
+      <div class="field">
+        <label for="authPassword">Mot de passe</label>
+        <div class="pw-wrap">
+          <input id="authPassword" type="password" autocomplete="current-password" required placeholder="8 caractères minimum" minlength="6">
+          <button class="pw-toggle" id="pwToggle" type="button" aria-label="Afficher le mot de passe">
+            <svg class="icon" viewBox="0 0 24 24" id="pwEyeIcon"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="auth-submit" id="authSubmit" type="submit"><span id="authSubmitLabel">Se connecter</span></button>
+      <button class="forgot-link" id="forgotBtn" type="button">Mot de passe oublié ?</button>
+    </form>
+    <div class="auth-msg" id="authMsg" hidden></div>
+    <div class="guest-divider"><span>ou</span></div>
+    <button class="guest-btn" id="guestBtn" type="button">Juste jeter un œil (mode invité)</button>
+  </div>
+</div>
+
+<div id="appShell" hidden>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><h1>Souk<em>Prix</em></h1></div>
+    <nav class="nav-links" id="navLinks">
+      <button class="nav-link" data-page="accueil" type="button">Accueil</button>
+      <button class="nav-link" data-page="liste" type="button">Ma liste</button>
+      <button class="nav-link" data-page="comparateur" type="button">Comparateur</button>
+      <button class="nav-link" data-page="enseignes" type="button">Enseignes</button>
+    </nav>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Changer de thème">
+        <svg class="icon" id="themeIconSun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon" id="themeIconMoon" viewBox="0 0 24 24" hidden><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </button>
+      <button class="cart-pill" id="cartPillBtn" type="button">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Ma liste <span class="count" id="cartCount">0</span>
+      </button>
+      <div class="user-chip">
+        <span class="user-email" id="userEmail"></span>
+        <button class="logout-btn" id="logoutBtn" type="button">Déconnexion</button>
+        <button class="logout-btn guest-cta" id="guestCreateBtn" type="button" hidden>Créer un compte</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="guest-banner" id="guestBanner" hidden>
+    <span>🧭 Mode invité — ta liste reste sur cet appareil uniquement.</span>
+    <button id="guestBannerBtn" type="button">Créer un compte pour la sauvegarder</button>
+  </div>
+
+  <section class="page" id="page-accueil">
+    <div class="hero">
+      <img src="images/hero-souk.jpg" alt="Étal coloré d'un souk marocain avec épices et légumes">
+      <div class="hero-content">
+        <h1>Le prix juste, <em>enseigne par enseigne</em>.</h1>
+        <p>SoukPrix compare les prix de l'épicerie et du quotidien entre Marjane, Carrefour, BIM et Aswak Salam, pour que votre panier coûte toujours le moins cher possible.</p>
+        <div class="hero-cta-row">
+          <button class="btn-primary" data-nav="comparateur" type="button">Comparer les prix</button>
+          <button class="btn-secondary" data-nav="liste" type="button">Voir ma liste</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-tile"><div class="stat-num" id="statProducts">200</div><div class="stat-label">produits suivis</div></div>
+      <div class="stat-tile"><div class="stat-num">4</div><div class="stat-label">enseignes comparées</div></div>
+      <div class="stat-tile"><div class="stat-num" id="statSaving">—</div><div class="stat-label">d'écart moyen entre la moins chère et la plus chère</div></div>
+    </div>
+
+    <div class="greeting"><span class="wave">👋</span> Bonjour <b id="greetingName">!</b> — Que compare-t-on aujourd'hui ?</div>
+    <div class="quickcats" id="quickCats"></div>
+
+    <div class="section-head"><h2>Paniers types</h2></div>
+    <div class="preset-grid">
+      <button class="preset-card" data-preset="etudiant" type="button">
+        <strong>Panier étudiant</strong>
+        <span>10 articles essentiels pour la semaine, petit budget</span>
+      </button>
+      <button class="preset-card" data-preset="famille" type="button">
+        <strong>Panier famille (semaine)</strong>
+        <span>14 articles pour les courses hebdomadaires d'un foyer</span>
+      </button>
+      <button class="preset-card" data-preset="petitdej" type="button">
+        <strong>Petit-déjeuner marocain</strong>
+        <span>9 articles pour un petit-déjeuner complet</span>
+      </button>
+    </div>
+
+    <div class="section-head"><h2>Parcourir par rayon</h2></div>
+    <div class="cat-grid">
+      <button class="cat-card" data-nav-cat="Fruits & Légumes" type="button">
+        <img src="images/fruits-legumes.jpg" alt="Étal de fruits et légumes frais sur un marché marocain">
+        <span>Fruits &amp; Légumes<span class="cat-count" data-cat-count="Fruits & Légumes"></span></span>
+      </button>
+      <button class="cat-card" data-nav-cat="Produits laitiers" type="button">
+        <img src="images/produits-laitiers.jpg" alt="Rayon de produits laitiers en supermarché">
+        <span>Produits laitiers<span class="cat-count" data-cat-count="Produits laitiers"></span></span>
+      </button>
+      <button class="cat-card" data-nav-cat="Boissons" type="button">
+        <img src="images/boissons.jpg" alt="Rayon de boissons en supermarché">
+        <span>Boissons<span class="cat-count" data-cat-count="Boissons"></span></span>
+      </button>
+      <button class="cat-card" data-nav-cat="Viande, Volaille & Poisson" type="button">
+        <img src="images/viande-poisson.jpg" alt="Étal de poissons frais sur glace">
+        <span>Viande &amp; Poisson<span class="cat-count" data-cat-count="Viande, Volaille & Poisson"></span></span>
+      </button>
+    </div>
+
+    <p class="note">Prix indicatifs à titre d'exemple pour la démonstration, non connectés en direct aux enseignes. Photos : Pexels (licence gratuite), à visée illustrative — elles ne montrent pas les magasins réels des enseignes comparées.</p>
+  </section>
+
+  <section class="page" id="page-comparateur">
+    <p class="panel-label" id="resultLabel">200 produits</p>
+    <div class="controls">
+      <label class="search">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" type="text" placeholder="Chercher un produit… (huile, lait, poulet…)" />
+      </label>
+      <button class="toggle-chip" id="onlyAllToggle" type="button"><span class="dot"></span>Disponible dans les 4 enseignes</button>
+      <button class="toggle-chip" id="onlyFavToggle" type="button"><span class="dot"></span>★ Favoris</button>
+    </div>
+    <div class="chips" id="chipRow"></div>
+    <div class="sort-row" id="sortRow">
+      <span class="sort-label">Trier :</span>
+      <button class="chip sort-chip" data-sort="defaut" type="button">Par rayon</button>
+      <button class="chip sort-chip" data-sort="economie" type="button">Plus grosses économies</button>
+      <button class="chip sort-chip" data-sort="prix" type="button">Prix le plus bas</button>
+      <button class="chip sort-chip" data-sort="unitprix" type="button">Prix au kg/L</button>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th class="store-h">Marjane<span class="live-dot" id="liveDotMarjane" title="Certains prix Marjane sont vérifiés en direct" hidden></span></th>
+              <th class="store-h">Carrefour</th>
+              <th class="store-h">BIM</th>
+              <th class="store-h">Aswak Salam<span class="live-dot" id="liveDot" title="Certains prix Aswak Salam sont vérifiés en direct" hidden></span></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">Certains produits proposent plusieurs marques ou formats (pastilles sous le nom) — change de sélection pour comparer, et regarde le prix au kg/litre affiché sous le prix pour comparer équitablement deux tailles différentes. BIM n'a pas de rayon boucherie / fruits &amp; légumes frais, conformément à son format de hard-discount — d'où les cases vides sur ces produits. La photo affichée est la vraie photo du produit chez Marjane ou Carrefour quand une correspondance fiable a été trouvée ; sinon, un pictogramme générique de rayon la remplace.<br>
+    <span class="live-note" id="liveNote" hidden>● Les prix marqués d'un point sont vérifiés automatiquement chaque semaine sur le site public de l'enseigne (marjane.ma ou aswakassalam.com)</span><br>
+    Les colonnes Marjane et Carrefour ont été mises à jour à partir des vrais catalogues en ligne des deux enseignes (marjane.ma et bringo.ma, relevés magasin Carrefour Sidi Maarouf) — quand la marque exacte du produit n'existait pas chez l'enseigne, le prix affiché est celui de l'équivalent générique le plus proche au même format. Les prix BIM restent des exemples illustratifs (BIM n'a pas de site marchand).</p>
+  </section>
+
+  <section class="page" id="page-liste">
+    <div class="hero" style="min-height:190px;">
+      <img src="images/ma-liste.jpg" alt="Personne poussant un chariot dans une allée de supermarché">
+      <div class="hero-content" style="padding:24px 28px;">
+        <h1 style="font-size:1.5rem;">Ma liste de courses</h1>
+        <p style="margin-top:6px;">Ajoutez des produits depuis le Comparateur : ils apparaissent ici avec le total par enseigne, synchronisés sur ton compte.</p>
+      </div>
+    </div>
+    <div class="layout" style="margin-top:26px;">
+      <div>
+        <div class="section-head" style="margin-top:0;">
+          <h2>Articles</h2>
+          <span id="receiptCount" style="font-family:'IBM Plex Mono',monospace;color:var(--ink-faint);font-size:0.8rem;">0 art.</span>
+        </div>
+        <div class="items-card">
+          <div class="cart-items" id="cartItems"></div>
+          <div class="receipt-actions">
+            <button class="clear-link" id="shareBtn" type="button">Partager ma liste</button>
+            <button class="clear-link" id="clearBtn" type="button">Vider la liste</button>
+          </div>
+        </div>
+      </div>
+      <aside>
+        <div class="receipt">
+          <div class="receipt-head"><h2>Total par enseigne</h2></div>
+          <div class="totals" id="totals"></div>
+          <div id="savingsCall"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="page" id="page-enseignes">
+    <div class="section-head" style="margin-top:0;"><h2>Les enseignes comparées</h2></div>
+    <div class="store-grid">
+      <div class="store-card">
+        <div class="store-mono">M</div>
+        <h3>Marjane</h3>
+        <div class="store-tag-row"><span class="store-tag">Hypermarché</span><span class="store-tag">Historique</span></div>
+        <p>La première chaîne d'hypermarchés du Maroc, présente dans la plupart des grandes villes. Assortiment large : épicerie, frais, boucherie, textile et bazar. Son site marjane.ma affiche un vrai catalogue de courses en ligne avec les prix — la majorité des produits ici ont été vérifiés directement dessus.</p>
+      </div>
+      <div class="store-card">
+        <div class="store-mono">C</div>
+        <h3>Carrefour</h3>
+        <div class="store-tag-row"><span class="store-tag">Hypermarché</span><span class="store-tag">International</span></div>
+        <p>Enseigne française exploitée sous franchise au Maroc (groupe Label'Vie), avec des formats hypermarché et proximité (Carrefour Market). Les prix ne sont pas sur carrefour.ma (simple vitrine) mais sur bringo.ma, leur service de courses en ligne — une sélection y est vérifiée manuellement.</p>
+      </div>
+      <div class="store-card">
+        <div class="store-mono">B</div>
+        <h3>BIM</h3>
+        <div class="store-tag-row"><span class="store-tag">Hard-discount</span><span class="store-tag">Petits formats</span></div>
+        <p>Chaîne de hard-discount d'origine turque : petits magasins de proximité, assortiment restreint mais prix serrés. Pas de rayon frais (boucherie, poissonnerie, fruits &amp; légumes).</p>
+      </div>
+      <div class="store-card">
+        <div class="store-mono">A</div>
+        <h3>Aswak Salam</h3>
+        <div class="store-tag-row"><span class="store-tag">Hypermarché</span><span class="store-tag">Marocain</span></div>
+        <p>Chaîne marocaine d'hypermarchés, avec une forte présence à Casablanca et dans plusieurs autres villes. Assortiment complet, épicerie et produits frais compris. Leur site aswakassalam.com affiche un vrai catalogue de prix — une sélection y est vérifiée automatiquement chaque semaine.</p>
+      </div>
+    </div>
+    <p class="note">Descriptions générales à titre indicatif, non affiliées aux enseignes citées.</p>
+
+    <div class="section-head"><h2>Coût total d'un panier comparable</h2></div>
+    <p class="panel-label" id="basketChartCaption">Calcul en cours…</p>
+    <div class="basket-chart" id="storeBasketChart"></div>
+  </section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  /* ---- Supabase ---- */
+  var SUPABASE_URL = "https://duepvvdrtvliomdbtnny.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_NelXlcJrWQ3pvIpxhU-poQ_JR9fHJCA";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var currentUser = null;
+
+  var CATS = [
+    "Épicerie salée","Épicerie sucrée","Produits laitiers","Boissons","Snacks & Apéritif",
+    "Hygiène & Entretien","Fruits & Légumes","Viande, Volaille & Poisson","Surgelés & Boulangerie"
+  ];
+
+  var ICONS = {
+    "Épicerie salée":'<path d="M9 8V6a3 3 0 0 1 6 0v2"/><rect x="7" y="8" width="10" height="12" rx="2"/><path d="M7 13h10"/>',
+    "Épicerie sucrée":'<circle cx="12" cy="12" r="8"/><path d="M9.5 9.5v.01M14.5 9.8v.01M9 14.5v.01M14 15v.01M12 12v.01" stroke-width="2.4"/>',
+    "Produits laitiers":'<path d="M9 3h6l1 4v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V7z"/><path d="M8 10h8"/>',
+    "Boissons":'<path d="M7 4h10l-1.2 15.2A2 2 0 0 1 13.8 21h-3.6a2 2 0 0 1-2-1.8z"/><path d="M6.5 9h11"/>',
+    "Snacks & Apéritif":'<path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 11c0-3.2 1.2-5.2 3-6.2"/>',
+    "Hygiène & Entretien":'<path d="M10 9V5.5h4V9"/><rect x="8" y="9" width="8" height="11" rx="2"/><path d="M14.6 5.2l2.6-1.7"/>',
+    "Fruits & Légumes":'<path d="M5 19c8 0 13-5 13-13-8 0-13 5-13 13z"/><path d="M6.3 17.7c2.6-2.6 4.4-5.4 5.2-8.7"/>',
+    "Viande, Volaille & Poisson":'<path d="M3 12c4-5 12-5 16 0-4 5-12 5-16 0z"/><path d="M19 12l2.3-2.6v5.2z"/><path d="M15.5 10.7v.01" stroke-width="2.4"/>',
+    "Surgelés & Boulangerie":'<path d="M12 3v18"/><path d="M4.8 7.5l14.4 9"/><path d="M19.2 7.5L4.8 16.5"/>'
+  };
+  function catIcon(cat){ return '<span class="cat-icon-tile"><svg viewBox="0 0 24 24">'+(ICONS[cat]||"")+'</svg></span>'; }
+
+  var PRODUCT_ICON_RULES = [
+    [["oeuf","œuf"], '<path d="M12 21c4 0 6-3.5 6-7.5C18 8 15 3 12 3S6 8 6 13.5C6 17.5 8 21 12 21z"/>'],
+    [["yaourt","yogourt","danino","activia","danup","actimel"], '<path d="M8 4h8l-1 14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/><path d="M7 4h10"/>'],
+    [["lait","lben","babeurre"], '<path d="M9 3h6l1 4v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V7z"/><path d="M8 10h8"/>'],
+    [["fromage","beurre","kiri","jben","gouda","edam"], '<rect x="4" y="9" width="16" height="9" rx="2"/><path d="M4 12.5h16"/>'],
+    [["confiture","miel","harissa","sauce","concentre","jam","tartiner","nutella","cacao"], '<rect x="7" y="9" width="10" height="11" rx="2"/><path d="M9 9V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>'],
+    [["conserve","thon","mais","haricots","petits pois conserve"], '<rect x="6" y="6" width="12" height="14" rx="1.5"/><ellipse cx="12" cy="6" rx="6" ry="1.5"/>'],
+    [["dentifrice","creme","crème","hydratante"], '<path d="M9 3h6v3l1.5 2v11a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2V8L9 6z"/>'],
+    [["savon"], '<rect x="4" y="9" width="16" height="8" rx="4"/><path d="M8 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'],
+    [["rasoir"], '<path d="M6 14l8-8 4 4-8 8z"/><path d="M6 14l-2 6 6-2"/>'],
+    [["couche","lingette"], '<circle cx="12" cy="8" r="3"/><path d="M7 21v-4a5 5 0 0 1 10 0v4"/>'],
+    [["biscuit","gaufrette","barquette","cereale","chocapic","corn flakes","cracker","tuile","bretzel","pop-corn","pain d'epice"], '<rect x="5" y="7" width="14" height="14" rx="1.5"/><path d="M5 11h14"/>'],
+    [["riz","farine","semoule","sucre","lentille","couscous","chapelure"], '<path d="M8 3h8l1 4H7z"/><path d="M6 7h12l-1.5 13a1 1 0 0 1-1 1H8.5a1 1 0 0 1-1-1z"/>'],
+    [["pain","baguette","croissant","msemen","sfenj"], '<path d="M4 14c0-5 4-9 8-9s8 4 8 9-3 6-8 6-8-1-8-6z"/><path d="M8 11c1-1 2-1 3 0M13 11c1-1 2-1 3 0"/>'],
+    [["glace","surgele","frite","nugget","pane","legumes surgeles","brocoli","lasagne","cordon"], '<path d="M12 3v18"/><path d="M4.8 7.5l14.4 9"/><path d="M19.2 7.5L4.8 16.5"/>'],
+    [["poulet","dinde","volaille","agneau","boeuf","bœuf","kefta","merguez","steak","escalope","foie","pigeon","cotelette","saucisse"], '<path d="M6 18l6-6"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="5" r="2.2"/><path d="M12 12l6-6"/>'],
+    [["sardine","merlan","dorade","crevette","calamar","poulpe","rouget","poisson"], '<path d="M3 12c4-5 12-5 16 0-4 5-12 5-16 0z"/><path d="M19 12l2.3-2.6v5.2z"/><path d="M15.5 10.7v.01" stroke-width="2.4"/>'],
+    [["eau ","coca","soda","jus","sirop","limonade","boisson","hawai","schwep","cola","the ","thé ","cafe","café"], '<path d="M9 2h6M10 2v4l-2 3v11a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V9l-2-3V2"/>'],
+    [["huile","vinaigre"], '<path d="M9 2h6M10 2v4l-2 3v11a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V9l-2-3V2"/>'],
+    [["chips","cacahuete","cacahouete","pistache","noix","amande","graine","fruits secs","olive"], '<path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 11c0-3.2 1.2-5.2 3-6.2"/>'],
+    [["lessive","javel","nettoyant","insecticide","assouplissant","detergent","détergent","vaisselle"], '<path d="M10 9V5.5h4V9"/><rect x="8" y="9" width="8" height="11" rx="2"/><path d="M14.6 5.2l2.6-1.7"/>'],
+    [["papier toilette","mouchoir","serviette hygien","coton"], '<rect x="5" y="7" width="14" height="14" rx="1.5"/><path d="M5 11h14"/>'],
+    [["sac poubelle","eponge","éponge"], '<path d="M10 9V5.5h4V9"/><rect x="8" y="9" width="8" height="11" rx="2"/><path d="M14.6 5.2l2.6-1.7"/>'],
+    [["shampoing","gel douche","deodorant","déodorant"], '<path d="M10 9V5.5h4V9"/><rect x="8" y="9" width="8" height="11" rx="2"/><path d="M14.6 5.2l2.6-1.7"/>']
+  ];
+  function stripAccents(s){ return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+  function productIcon(pr){
+    var n = stripAccents(pr.name);
+    for(var i=0;i<PRODUCT_ICON_RULES.length;i++){
+      var kws = PRODUCT_ICON_RULES[i][0];
+      for(var j=0;j<kws.length;j++){
+        if(n.indexOf(stripAccents(kws[j]))!==-1){
+          return '<span class="cat-icon-tile"><svg viewBox="0 0 24 24">'+PRODUCT_ICON_RULES[i][1]+'</svg></span>';
+        }
+      }
+    }
+    return catIcon(pr.cat);
+  }
+  function imgFallback(el){
+    var fallback = el.getAttribute("data-fallback");
+    if(fallback) el.parentElement.outerHTML = decodeURIComponent(fallback);
+  }
+  window.imgFallback = imgFallback;
+  function productMedia(pr, variant){
+    var url = PRODUCT_IMAGES[variant.id];
+    if(!url) return productIcon(pr);
+    var iconHtml = encodeURIComponent(productIcon(pr));
+    return '<span class="prod-photo-wrap"><img class="prod-photo" src="'+url+'" alt="" loading="lazy" data-fallback="'+iconHtml+'" onerror="imgFallback(this)"></span>';
+  }
+
+  var PRODUCTS = [
+    fam("Huile Lesieur Tournesol","Épicerie salée",[
+      [null,"1 L",17.95,17.90,20.50,22.90],
+      [null,"2 L",35.80,35.90,39.90,43.20]
+    ]),
+    p("Huile d'Olive Lesieur","1 L","Épicerie salée",47.45,49.95,null,72.50),
+    fam("Riz Dari","Épicerie salée",[
+      [null,"1 kg",17.50,11.95,9.90,10.90],
+      [null,"5 kg",76.50,112.25,47.50,51.90]
+    ]),
+    p("Semoule Dari Moyenne","1 kg","Épicerie salée",26.20,12.40,8.60,9.60),
+    fam("Farine Fleur","Épicerie salée",[
+      ["Belma","2 kg",13.60,16.20,13.90,15.20],
+      ["Luxor","1 kg",7.50,7.80,7.20,8.10]
+    ]),
+    p("Farine Complète Belma","1 kg","Épicerie salée",24.95,13.60,null,13.20),
+    fam("Pâtes Chourouk","Épicerie salée",[
+      [null,"500 g",6.95,4.90,4.20,4.80],
+      [null,"1 kg",14.95,9.40,8.20,9.20]
+    ]),
+    fam("Thon Titus","Épicerie salée",[
+      [null,"160 g",23.95,12.50,10.90,12.20],
+      [null,"3x160 g",49.95,52.95,29.50,32.80]
+    ]),
+    p("Lentilles Dari","500 g","Épicerie salée",8.60,9.10,11.80,12.90),
+    fam("Sel Fin","Épicerie salée",[
+      ["Cristal","1 kg",4.45,19.60,2.90,3.40],
+      ["Atlantique","1 kg",4.45,19.60,2.60,3.10]
+    ]),
+    p("Levure Boulangère Jaouda","100 g","Épicerie salée",6.90,7.30,6.40,7.10),
+    fam("Sauce Tomate Aicha","Épicerie salée",[
+      [null,"400 g",8.90,9.40,8.20,9.20],
+      [null,"800 g",15.90,16.80,14.50,16.40]
+    ]),
+    p("Huile de Table Lesieur","5 L","Épicerie salée",88.50,87.95,90.00,99.50),
+    p("Huile d'Argan Alimentaire Ouazzani","250 ml","Épicerie salée",160.90,240.75,null,92.00),
+    p("Vinaigre Blanc Jibal","500 ml","Épicerie salée",5.60,7.50,6.40,7.10),
+    p("Câpres Aicha","100 g","Épicerie salée",14.90,15.60,null,15.30),
+    p("Concentré de Tomate Aicha","400 g","Épicerie salée",9.90,10.50,9.20,10.20),
+    p("Harissa Aicha","90 g","Épicerie salée",8.50,9.00,7.90,8.80),
+    fam("Couscous Moyen Dari","Épicerie salée",[
+      [null,"1 kg",15.50,15.25,10.90,12.20],
+      [null,"2 kg",29.90,30.95,20.90,23.60]
+    ]),
+    p("Petits Pois Conserve Aicha","400 g","Épicerie salée",23.50,24.00,8.20,9.20),
+    p("Haricots Blancs Conserve Aicha","400 g","Épicerie salée",21.90,23.00,8.80,9.80),
+    p("Maïs Doux Conserve Jibal","340 g","Épicerie salée",19.95,20.60,9.90,11.20),
+    p("Chapelure Dari","250 g","Épicerie salée",6.95,4.90,7.20,8.10),
+    p("Bouillon de Poule Jumbo","x24","Épicerie salée",21.60,24.50,15.90,17.40),
+    p("Épices Ras El Hanout Alwane","100 g","Épicerie salée",27.00,18.95,null,13.30),
+    p("Cannelle Moulue Alwane","50 g","Épicerie salée",17.50,10.50,null,10.20),
+
+    fam("Sucre Cosumar","Épicerie sucrée",[
+      [null,"2 kg",16.20,9.95,14.90,15.90],
+      [null,"1 kg",8.30,8.90,7.90,8.70]
+    ]),
+    p("Sucre Vanillé Cosumar","x10 sachets","Épicerie sucrée",5.50,5.50,6.00,6.80),
+    fam("Café Moulu Dallah","Épicerie sucrée",[
+      [null,"250 g",71.50,56.25,23.50,25.50],
+      [null,"500 g",77.50,50.50,45.50,49.80]
+    ]),
+    fam("Nescafé 3 en 1","Épicerie sucrée",[
+      [null,"x10 sticks",22.90,24.00,21.50,23.50],
+      [null,"x24 sticks",50.90,53.50,48.50,52.80]
+    ]),
+    fam("Thé Sultan","Épicerie sucrée",[
+      [null,"x25 sachets",56.50,19.50,17.90,19.20],
+      [null,"x100 sachets",68.90,72.50,65.50,71.20]
+    ]),
+    p("Biscuits Bimo P'tit Déj","350 g","Épicerie sucrée",9.90,10.50,9.20,10.20),
+    fam("Confiture Aicha","Épicerie sucrée",[
+      [null,"430 g",18.60,17.95,15.90,16.90],
+      [null,"1 kg",35.95,35.75,32.50,35.90]
+    ]),
+    fam("Miel Ouazzani","Épicerie sucrée",[
+      [null,"250 g",29.95,51.75,null,46.50],
+      [null,"500 g",59.95,133.95,null,87.20]
+    ]),
+    fam("Nutella","Épicerie sucrée",[
+      [null,"400 g",39.90,39.50,37.90,41.50],
+      [null,"600 g",73.50,73.50,70.50,75.80]
+    ]),
+    fam("Chocolat Cadbury Lait","Épicerie sucrée",[
+      [null,"100 g",12.90,13.50,11.90,13.20],
+      [null,"200 g",23.90,25.20,21.90,24.60]
+    ]),
+    fam("Céréales Corn Flakes","Épicerie sucrée",[
+      [null,"375 g",36.70,34.25,27.90,31.00],
+      [null,"500 g",32.95,36.50,35.20,39.10]
+    ]),
+    p("Sirop Hacen Fruits Rouges","1 L","Épicerie sucrée",19.90,13.95,18.50,20.50),
+    p("Gaufrettes Bimo Choco","200 g","Épicerie sucrée",8.90,9.40,8.20,9.20),
+    p("Barquettes Bimo Fraise","150 g","Épicerie sucrée",40.95,10.40,9.10,10.20),
+    p("Pain d'Épices Bimo","300 g","Épicerie sucrée",67.50,69.75,12.90,14.30),
+    p("Chocolat Poulain en Poudre","400 g","Épicerie sucrée",32.90,44.25,30.50,34.20),
+    p("Bonbons Halls","x20","Épicerie sucrée",11.90,12.50,10.90,12.20),
+    p("Chewing-gum Freedent","x14","Épicerie sucrée",9.90,8.95,9.20,10.20),
+    p("Sirop d'Orgeat Hacen","1 L","Épicerie sucrée",18.90,98.25,17.50,19.40),
+    p("Thé Vert en Vrac","500 g","Épicerie sucrée",34.90,37.00,32.50,36.00),
+    p("Café Grains Dallah","250 g","Épicerie sucrée",55.95,36.50,37.50,41.20),
+    p("Lait Concentré Sucré Nestlé","397 g","Épicerie sucrée",33.30,27.95,15.90,17.40),
+    p("Yaourt Grec Danone Sucré","x4","Épicerie sucrée",22.90,24.00,21.50,23.50),
+    p("Confiture Abricot Aicha","430 g","Épicerie sucrée",18.95,19.60,15.90,17.30),
+    p("Miel de Fleurs Ouazzani","500 g","Épicerie sucrée",78.00,70.55,null,80.50),
+    p("Céréales Chocapic","375 g","Épicerie sucrée",54.50,56.25,29.90,33.00),
+
+    fam("Lait Centrale Danone","Produits laitiers",[
+      [null,"1 L",12.00,11.95,7.20,7.80],
+      [null,"pack 6x1 L",43.90,45.90,41.50,44.90]
+    ]),
+    p("Lait en Poudre Nido","400 g","Produits laitiers",68.00,72.00,65.00,70.50),
+    p("Lben Centrale","1 L","Produits laitiers",10.10,9.50,5.80,6.50),
+    fam("Yaourt Danone Nature","Produits laitiers",[
+      [null,"x8",19.95,19.95,15.90,17.20],
+      [null,"x16",31.90,33.50,29.90,33.20]
+    ]),
+    fam("Yaourt à Boire Danino","Produits laitiers",[
+      [null,"x4",13.90,14.50,12.90,14.20],
+      [null,"x8",26.90,28.20,24.90,27.60]
+    ]),
+    fam("Petit Suisse Danone","Produits laitiers",[
+      [null,"x12",21.90,23.00,20.50,22.50],
+      [null,"x16",27.90,29.40,25.90,28.70]
+    ]),
+    fam("Vache qui rit","Produits laitiers",[
+      [null,"16 portions",26.00,25.95,28.50,30.50],
+      [null,"8 portions",12.95,12.25,15.90,17.40]
+    ]),
+    p("Fromage Frais Jibal","250 g","Produits laitiers",18.90,19.80,17.90,19.40),
+    fam("Beurre Président","Produits laitiers",[
+      [null,"250 g",69.95,52.05,23.90,25.50],
+      [null,"500 g",139.90,50.50,45.50,49.80]
+    ]),
+    p("Crème Fraîche Jibal","20 cl","Produits laitiers",12.95,18.95,8.50,9.10),
+    p("Crème Chantilly Gloria","250 ml","Produits laitiers",13.95,17.80,null,17.30),
+    fam("Œufs frais","Produits laitiers",[
+      [null,"plateau x30",45.50,56.50,49.90,53.00],
+      [null,"plateau x12",22.90,29.95,20.90,23.80]
+    ]),
+    fam("Fromage Kiri","Produits laitiers",[
+      [null,"x8",15.95,15.95,23.50,25.50],
+      [null,"x16",25.52,47.20,41.90,46.10]
+    ]),
+    p("Fromage Gouda Tranches","200 g","Produits laitiers",27.95,29.75,27.50,29.80),
+    p("Yaourt Oikos Nature","x4","Produits laitiers",26.90,28.00,25.50,27.50),
+    p("Lait Demi-Écrémé Jibal","1 L","Produits laitiers",12.00,11.95,7.40,8.10),
+    p("Babeurre Jibal","1 L","Produits laitiers",6.90,7.30,6.40,7.10),
+    p("Fromage Rouiba Frais","200 g","Produits laitiers",14.95,14.70,14.90,16.40),
+    p("Beurre Doux Jibal","200 g","Produits laitiers",27.90,20.90,20.50,22.50),
+    p("Crème Dessert Danone Vanille","x4","Produits laitiers",15.90,16.80,14.90,16.40),
+    p("Fromage Edam Meule","200 g","Produits laitiers",26.90,28.99,25.50,27.80),
+    p("Yaourt Brassé Jaouda","x8","Produits laitiers",19.95,19.95,14.90,16.40),
+
+    fam("Eau Sidi Ali","Boissons",[
+      [null,"1.5 L",5.00,4.50,3.90,4.40],
+      [null,"pack 6x1.5 L",30.00,27.50,23.90,26.90]
+    ]),
+    fam("Eau Ain Saïss","Boissons",[
+      [null,"1.5 L",4.65,4.50,3.70,4.10],
+      [null,"pack 6x1.5 L",22.90,24.95,21.20,23.80]
+    ]),
+    p("Eau Aïn Atlas","1.5 L","Boissons",4.60,4.50,3.50,3.90),
+    fam("Coca-Cola","Boissons",[
+      [null,"1.5 L",9.50,10.50,9.20,10.30],
+      [null,"2 L",12.90,13.60,11.90,13.30]
+    ]),
+    fam("Jus Marrakech Orange","Boissons",[
+      [null,"1 L",16.30,16.50,12.90,14.20],
+      [null,"2 L",26.90,28.50,24.90,27.80]
+    ]),
+    fam("Jus Rani Orange","Boissons",[
+      [null,"1 L",11.90,13.95,10.90,12.20],
+      [null,"2 L",22.90,27.50,20.90,23.60]
+    ]),
+    fam("Soda Hawaï","Boissons",[
+      [null,"2 L",8.50,9.00,7.90,8.80],
+      [null,"pack 6x33 cl",25.90,27.50,23.90,26.90]
+    ]),
+    fam("Raibi Jamila","Boissons",[
+      [null,"x4",9.98,8.60,7.60,8.40],
+      [null,"x16",39.95,32.95,37.50,40.90]
+    ]),
+    p("Lait Chocolaté Danone","x4","Boissons",14.90,15.60,13.90,15.30),
+    p("Sirop de Menthe Hacen","1 L","Boissons",17.90,60.95,16.90,18.40),
+    p("Boisson Énergisante Speed","250 ml","Boissons",11.95,6.00,null,13.20),
+    fam("Eau Oulmès Gazeuse","Boissons",[
+      [null,"1 L",6.95,6.25,6.40,7.10],
+      [null,"33 cl",3.90,3.95,3.20,3.70]
+    ]),
+    p("Thé à la Menthe Glacé Lipton","1.5 L","Boissons",12.90,23.25,11.90,13.30),
+    p("Jus d'Ananas Marrakech","1 L","Boissons",16.95,16.95,13.90,15.30),
+    p("Jus Pomme Rani","1 L","Boissons",11.90,13.95,10.90,12.20),
+    p("Boisson au Malt Sidra","33 cl","Boissons",6.50,22.90,5.90,6.70),
+    p("Café Glacé Nescafé","250 ml","Boissons",13.90,29.50,12.90,14.30),
+    p("Limonade Hawaï","1 L","Boissons",5.00,34.75,6.20,7.10),
+    p("Jus Multifruits Marrakech","1 L","Boissons",14.90,79.50,13.90,15.30),
+    p("Eau Bahia","1.5 L","Boissons",3.60,3.50,3.40,3.80),
+    p("Boisson Isotonique Gatorade","500 ml","Boissons",15.90,16.80,null,16.40),
+    p("Lait Aromatisé Fraise Danone","x4","Boissons",15.90,16.80,14.90,16.40),
+
+    fam("Chips Chipsy Nature","Snacks & Apéritif",[
+      [null,"150 g",26.95,14.50,8.20,9.20],
+      [null,"300 g",16.90,40.25,15.50,17.40]
+    ]),
+    fam("Cacahuètes Grillées","Snacks & Apéritif",[
+      [null,"250 g",21.95,21.95,13.90,15.30],
+      ["Aïcha","250 g",21.95,21.95,12.90,14.30]
+    ]),
+    fam("Olives Vertes Aicha","Snacks & Apéritif",[
+      [null,"370 g",22.95,25.75,12.90,14.30],
+      [null,"700 g",24.90,27.95,22.90,25.60]
+    ]),
+    p("Pop-Corn Sucré","100 g","Snacks & Apéritif",5.95,7.90,6.90,7.80),
+    p("Biscuits Salés Apéritif","200 g","Snacks & Apéritif",19.50,10.40,9.20,10.20),
+    fam("Amandes Décortiquées","Snacks & Apéritif",[
+      [null,"200 g",34.90,37.00,32.50,36.00],
+      [null,"500 g",79.90,84.50,74.50,82.80]
+    ]),
+    p("Chips Chipsy Paprika","150 g","Snacks & Apéritif",26.95,9.40,8.20,9.20),
+    p("Pistaches Grillées","200 g","Snacks & Apéritif",50.90,42.00,37.50,41.20),
+    p("Noix de Cajou","200 g","Snacks & Apéritif",49.50,47.80,42.00,46.20),
+    p("Cacahuètes Enrobées Wasabi","150 g","Snacks & Apéritif",74.25,13.60,11.90,13.30),
+    p("Biscuits Apéritif Crackers","200 g","Snacks & Apéritif",35.95,11.50,9.90,11.20),
+    p("Olives Noires Aicha","370 g","Snacks & Apéritif",14.90,15.50,13.90,15.30),
+    p("Fruits Secs Mélangés","250 g","Snacks & Apéritif",29.90,24.50,27.90,30.80),
+    p("Tuiles Salées au Fromage","100 g","Snacks & Apéritif",14.61,12.50,10.90,12.20),
+    p("Bretzels Salés","150 g","Snacks & Apéritif",9.90,21.50,9.20,10.20),
+    p("Chips Lay's Nature","130 g","Snacks & Apéritif",22.50,23.80,9.90,11.20),
+    p("Cacahuètes Salées Nature","500 g","Snacks & Apéritif",24.90,26.00,23.50,25.50),
+    p("Graines de Tournesol Grillées","200 g","Snacks & Apéritif",31.90,9.40,8.20,9.20),
+
+    fam("Lessive Poudre","Hygiène & Entretien",[
+      ["Tide","3 kg",58.90,79.90,54.90,60.50],
+      ["Ariel","3 kg",66.98,65.50,57.90,63.80]
+    ]),
+    p("Eau de Javel Sanytol","1 L","Hygiène & Entretien",7.95,7.20,12.90,14.30),
+    p("Assouplissant Cajoline","2 L","Hygiène & Entretien",39.95,29.50,37.50,41.20),
+    fam("Dentifrice","Hygiène & Entretien",[
+      ["Signal","100 ml",17.95,17.95,18.50,20.50],
+      ["Aquafresh","100 ml",17.95,35.90,19.90,22.80]
+    ]),
+    fam("Shampoing Head & Shoulders","Hygiène & Entretien",[
+      [null,"400 ml",36.95,34.95,45.90,49.90],
+      [null,"700 ml",79.90,84.50,74.50,82.80]
+    ]),
+    p("Déodorant Nivea","150 ml","Hygiène & Entretien",29.90,31.50,27.90,30.80),
+    fam("Rasoirs Gillette","Hygiène & Entretien",[
+      [null,"x5",28.95,47.00,42.00,46.20],
+      [null,"x10",64.90,68.20,60.90,66.80]
+    ]),
+    fam("Savon Douche Palmolive","Hygiène & Entretien",[
+      [null,"250 ml",22.90,24.00,21.20,23.50],
+      [null,"500 ml",39.90,42.00,36.90,41.20]
+    ]),
+    fam("Couches Pampers Taille 4","Hygiène & Entretien",[
+      [null,"x24",89.90,94.00,84.90,92.50],
+      [null,"x68",172.90,181.50,159.90,178.20]
+    ]),
+    p("Éponges Récurantes","x3","Hygiène & Entretien",8.50,9.95,7.90,8.80),
+    fam("Papier Toilette Bimo","Hygiène & Entretien",[
+      [null,"x12",27.95,19.95,32.90,35.80],
+      [null,"x24",64.90,68.50,60.50,66.80]
+    ]),
+    p("Liquide Vaisselle Cristal","1 L","Hygiène & Entretien",14.90,15.50,13.90,15.20),
+    p("Nettoyant Multi-Usage Ajax","1 L","Hygiène & Entretien",9.95,12.30,15.90,17.40),
+    p("Détergent Vaisselle Mains Fairy","500 ml","Hygiène & Entretien",12.75,23.70,14.90,16.40),
+    p("Serviettes Hygiéniques Always","x14","Hygiène & Entretien",24.20,23.00,21.50,23.50),
+    p("Coton-Tiges Q-Tips","x200","Hygiène & Entretien",8.50,9.95,13.90,15.30),
+    p("Mouchoirs en Papier Bimo","x10","Hygiène & Entretien",12.90,15.00,11.90,13.30),
+    p("Gel Douche Nivea","250 ml","Hygiène & Entretien",44.95,46.50,23.50,25.50),
+    p("Crème Hydratante Nivea","100 ml","Hygiène & Entretien",33.50,24.95,32.50,36.00),
+    p("Brosse à Dents Signal","x2","Hygiène & Entretien",56.40,52.90,15.90,17.40),
+    p("Sacs Poubelle Bimo","x30","Hygiène & Entretien",34.95,19.80,17.50,19.40),
+    p("Insecticide Baygon","400 ml","Hygiène & Entretien",35.50,36.75,30.50,34.20),
+    p("Nettoyant Vitres Ajax","500 ml","Hygiène & Entretien",26.95,15.40,13.90,15.30),
+    p("Lingettes Désinfectantes Sanytol","x40","Hygiène & Entretien",45.00,14.50,25.50,27.80),
+
+    p("Tomates","1 kg","Fruits & Légumes",6.90,8.50,null,6.80),
+    p("Pommes de terre","1 kg","Fruits & Légumes",10.50,8.50,null,4.70),
+    p("Oignons","1 kg","Fruits & Légumes",5.20,6.50,null,5.40),
+    p("Carottes","1 kg","Fruits & Légumes",7.50,7.96,null,5.10),
+    p("Poivrons","1 kg","Fruits & Légumes",9.80,12.96,null,9.20),
+    p("Concombres","1 kg","Fruits & Légumes",7.90,8.96,null,6.10),
+    p("Ail","250 g","Fruits & Légumes",17.90,16.48,null,7.80),
+    p("Citrons","1 kg","Fruits & Légumes",13.00,19.95,null,10.30),
+    p("Bananes","1 kg","Fruits & Légumes",19.90,12.96,null,15.50),
+    p("Oranges","1 kg","Fruits & Légumes",7.90,6.98,null,8.20),
+    p("Pommes","1 kg","Fruits & Légumes",16.90,13.95,null,17.60),
+    p("Courgettes","1 kg","Fruits & Légumes",13.80,14.50,null,7.20),
+    p("Aubergines","1 kg","Fruits & Légumes",7.00,7.96,null,7.20),
+    p("Épinards","1 kg","Fruits & Légumes",25.80,29.96,null,9.20),
+    p("Choux-fleurs","1 kg","Fruits & Légumes",7.90,16.95,null,8.20),
+    p("Radis","500 g","Fruits & Légumes",4.90,5.30,null,5.10),
+    p("Menthe Fraîche","botte","Fruits & Légumes",3.50,2.95,null,3.70),
+    p("Persil","botte","Fruits & Légumes",3.20,1.50,null,3.40),
+    p("Pastèque","1 kg","Fruits & Légumes",9.36,4.95,null,5.10),
+    p("Melon","1 kg","Fruits & Légumes",5.00,4.50,null,9.20),
+    p("Fraises","500 g","Fruits & Légumes",18.90,20.50,null,19.80),
+    p("Raisin","1 kg","Fruits & Légumes",9.90,21.95,null,23.80),
+
+    p("Poulet entier","1 kg","Viande, Volaille & Poisson",31.12,38.90,null,33.50),
+    p("Cuisses de Poulet","1 kg","Viande, Volaille & Poisson",43.80,45.90,null,37.20),
+    p("Viande hachée de bœuf","1 kg","Viande, Volaille & Poisson",115.80,109.90,null,92.00),
+    p("Merguez","1 kg","Viande, Volaille & Poisson",79.80,89.90,null,74.50),
+    p("Kefta","1 kg","Viande, Volaille & Poisson",78.00,83.00,null,80.50),
+    p("Escalope de dinde","1 kg","Viande, Volaille & Poisson",74.50,72.90,null,70.00),
+    p("Foie de veau","1 kg","Viande, Volaille & Poisson",78.00,94.46,null,80.00),
+    p("Sardines fraîches","1 kg","Viande, Volaille & Poisson",22.00,25.00,null,23.50),
+    p("Merlan","1 kg","Viande, Volaille & Poisson",73.69,77.50,null,46.50),
+    p("Dorade","1 kg","Viande, Volaille & Poisson",58.00,103.48,null,60.00),
+    p("Crevettes","1 kg","Viande, Volaille & Poisson",128.95,126.96,null,114.00),
+    p("Foie de Poulet","1 kg","Viande, Volaille & Poisson",34.00,42.90,null,35.50),
+    p("Ailes de Poulet","1 kg","Viande, Volaille & Poisson",25.80,33.90,null,35.50),
+    p("Steak Haché de Bœuf","x4","Viande, Volaille & Poisson",59.80,45.50,null,44.20),
+    p("Côtelettes d'Agneau","1 kg","Viande, Volaille & Poisson",193.80,213.90,null,124.00),
+    p("Épaule d'Agneau","1 kg","Viande, Volaille & Poisson",184.90,213.90,null,114.00),
+    p("Saucisses de Dinde","500 g","Viande, Volaille & Poisson",32.90,26.45,null,34.00),
+    p("Calamars","1 kg","Viande, Volaille & Poisson",59.95,153.50,null,88.50),
+    p("Poulpe","1 kg","Viande, Volaille & Poisson",95.00,99.96,null,98.50),
+    p("Thon Frais","1 kg","Viande, Volaille & Poisson",68.00,73.00,null,70.50),
+    p("Rougets","1 kg","Viande, Volaille & Poisson",55.00,59.00,null,57.00),
+    p("Pigeon","unité","Viande, Volaille & Poisson",39.95,41.00,null,39.50),
+
+    fam("Pain de mie","Surgelés & Boulangerie",[
+      [null,"500 g",14.95,13.95,9.90,11.20],
+      [null,"1 kg",20.90,21.90,18.90,21.50]
+    ]),
+    p("Baguette","250 g","Surgelés & Boulangerie",2.60,5.95,null,2.70),
+    fam("Croissants","Surgelés & Boulangerie",[
+      [null,"x6",33.90,46.50,14.50,16.20],
+      [null,"x12",29.90,31.20,27.50,30.60]
+    ]),
+    p("Msemen Surgelé","x6","Surgelés & Boulangerie",18.90,21.00,17.50,19.50),
+    p("Pizza Surgelée Marino","400 g","Surgelés & Boulangerie",28.90,39.75,26.90,29.80),
+    p("Nuggets de Poulet Findus","500 g","Surgelés & Boulangerie",63.90,30.46,32.50,36.00),
+    fam("Frites Surgelées Findus","Surgelés & Boulangerie",[
+      [null,"1 kg",37.90,29.90,18.50,20.50],
+      [null,"2.5 kg",67.95,68.50,41.50,46.10]
+    ]),
+    p("Légumes Surgelés Mélangés","1 kg","Surgelés & Boulangerie",16.90,34.50,15.90,17.40),
+    p("Poisson Pané Findus","400 g","Surgelés & Boulangerie",35.90,38.50,30.50,34.20),
+    p("Tarte aux Pommes Surgelée","450 g","Surgelés & Boulangerie",29.90,31.50,null,30.80),
+    fam("Glace Vanille Extrême","Surgelés & Boulangerie",[
+      [null,"1 L",48.70,26.90,30.50,34.20],
+      [null,"2 L",55.90,58.50,51.90,57.20]
+    ]),
+    p("Petits Pois Surgelés","1 kg","Surgelés & Boulangerie",36.19,31.50,11.90,13.20),
+    p("Pain Complet","500 g","Surgelés & Boulangerie",15.50,15.95,11.90,13.30),
+    p("Beignets Sfenj Surgelés","x6","Surgelés & Boulangerie",16.90,17.80,15.50,17.40),
+    p("Épinards Surgelés Findus","1 kg","Surgelés & Boulangerie",51.25,50.95,14.90,16.40),
+    p("Brocolis Surgelés","1 kg","Surgelés & Boulangerie",67.38,40.25,16.50,18.40),
+    p("Lasagnes Surgelées Marino","500 g","Surgelés & Boulangerie",34.90,35.50,32.50,36.00),
+    p("Cordons Bleus Findus","x4","Surgelés & Boulangerie",29.90,31.50,27.90,30.80)
+  ];
+
+  /* Real product photos scraped from marjane.ma / bringo.ma (Carrefour), keyed by variant id.
+     Only present where a confident brand+size match was found — everything else keeps its icon. */
+  var PRODUCT_IMAGES = {
+    "epicerie-saleehuile-lesieur-tournesol-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/205324_1.webp",
+    "epicerie-saleehuile-lesieur-tournesol-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1742817286/product/66646e95c7bbb026cb37167f6fae5f35.webp",
+    "epicerie-saleeriz-dari-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1770832934/product/b8e0bcc6e48a76a8cf8f4affa457dd8c.webp",
+    "epicerie-saleeriz-dari-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1739467827/product/4d51bec6a5fc7a07a40d6ec7f6730ea5.webp",
+    "epicerie-saleesemoule-dari-moyenne-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1739094031/product/41091149fd75a556aec913e33373796c.webp",
+    "epicerie-saleefarine-fleur-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/1374536_1.webp",
+    "epicerie-saleefarine-fleur-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1772528949/product/a869421704e45836c153bbbacfadf2b0.webp",
+    "epicerie-saleefarine-complete-belma-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1763848541/product/12b102b50adf1c7b888e796ed0b69748.webp",
+    "epicerie-saleethon-titus-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1753958609/product/7458d607348e467a478b14c57f3f77dd.webp",
+    "epicerie-saleelentilles-dari-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/18309_1.webp",
+    "epicerie-saleesel-fin-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1634033934/product_optimized/ce41b6adbfb63671bc5a0b000b8d1c72.webp",
+    "epicerie-saleesel-fin-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1634033934/product_optimized/ce41b6adbfb63671bc5a0b000b8d1c72.webp",
+    "epicerie-saleehuile-de-table-lesieur-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1763368762/product/bc3661f31485497b30944481fdd2169d.webp",
+    "epicerie-saleehuile-d-argan-alimentaire-ouazzani-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1738165703/product/1edcc3b1f1dd1a326235d26b12475772.webp",
+    "epicerie-saleecouscous-moyen-dari-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/204975_1.webp",
+    "epicerie-saleecouscous-moyen-dari-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/1319461_1.webp",
+    "epicerie-saleepetits-pois-conserve-aicha-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1787258977/product/1520ca54ed0a67f81c1eb155b0109ba1.webp",
+    "epicerie-saleeharicots-blancs-conserve-aicha-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/793480_1.webp",
+    "epicerie-saleemais-doux-conserve-jibal-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1749655363/product/50790735136f8521c7f1c78ae13623d8.webp",
+    "epicerie-saleechapelure-dari-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1654506797/product_optimized/44fd18bb8443a2793d925a8dad09d128.webp",
+    "epicerie-saleebouillon-de-poule-jumbo-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1781518683/product/d5a2f79f837cc54467b9a3e1c58fb748.webp",
+    "epicerie-saleeepices-ras-el-hanout-alwane-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/ae/cc/8beb7001998d93b72732f6eb098e.jpg",
+    "epicerie-sucreesucre-cosumar-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/cb/44/fac959ed58715cf0e6fc3118da0c.jpg",
+    "epicerie-sucreesucre-vanille-cosumar-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1739090983/product/6085416ab71147d3771f9aa40b2d0d04.webp",
+    "epicerie-sucreecafe-moulu-dallah-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1780308033/product/f5162f6032a3d37fba1a85e5bec9efe0.webp",
+    "epicerie-sucreeconfiture-aicha-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/20908_1.webp",
+    "epicerie-sucreemiel-ouazzani-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1670576198/product_optimized/bbb56409fa133590a134b2952a772821.webp",
+    "epicerie-sucreemiel-ouazzani-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1772195908/product/5a3dabdd8b38ac3c4fdfd24760fb06cc.webp",
+    "epicerie-sucreenutella-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1756132845/product/526ca5e28a9198cdc060a4eb743d746e.webp",
+    "epicerie-sucreecereales-corn-flakes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1764171517/product/109eb2c4c030477dd8fecc6d3c7432b2.webp",
+    "epicerie-sucreecereales-corn-flakes-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1678367446/product_optimized/fcebddeee96a9fa3eb245f795fefd760.webp",
+    "epicerie-sucreesirop-hacen-fruits-rouges-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/bb/07/9819e6c8d61e95524aea8325fa04.jpg",
+    "epicerie-sucreepain-d-epices-bimo-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/335154_2.webp",
+    "epicerie-sucreechocolat-poulain-en-poudre-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/e4/d4/c2c1fd0d8a73889ba54e86805bf4.jpg",
+    "epicerie-sucreesirop-d-orgeat-hacen-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/6f/ae/94a5306cea3746835cf390c505a8.jpg",
+    "epicerie-sucreecafe-grains-dallah-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1773311954/product/303b2b23973df03f73b225f58008c89a.webp",
+    "epicerie-sucreelait-concentre-sucre-nestle-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1741889036/product/52f5f0a4ffdf06f5314f1712fa6ff4d1.webp",
+    "epicerie-sucreemiel-de-fleurs-ouazzani-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/0a/26/0c8aaef6159e0ce65832f27c57e9.jpg",
+    "epicerie-sucreecereales-chocapic-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/83563_1.webp",
+    "produits-laitierslait-centrale-danone-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/272681_1.webp",
+    "produits-laitierslben-centrale-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1753103708/product/05cdae02f0ceb6923c19961a75f77040.webp",
+    "produits-laitiersbeurre-president-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1765614733/product/011d42634a8230e308eefb820ef9c626.webp",
+    "produits-laitierscreme-fraiche-jibal-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1712233900/product/8d1c5dd6e27510db416db4d0747937ba.webp",
+    "produits-laitiers-ufs-frais-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381905/product/03437eead881a9e4a1740504ace739ba.webp",
+    "produits-laitiersfromage-kiri-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/f8/48/7eb2bef28c76ed3287a58ab3e902.jpg",
+    "produits-laitiersfromage-gouda-tranches-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1765884683/product/0d75d328caf702efc153d8dc35131405.webp",
+    "produits-laitierslait-demi-ecreme-jibal-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/a1/0f/6dd43a378d55cbcf9ef9843ac249.jpg",
+    "produits-laitiersfromage-rouiba-frais-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1638177385/product_optimized/ce8be7c183ab2e44f4e55c49fe07a6e6.webp",
+    "produits-laitiersbeurre-doux-jibal-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1744280306/product/b6a50187f25fc240f2412114b70cda52.webp",
+    "produits-laitiersfromage-edam-meule-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/fd/58/126f61fbce13159f7c1cc84f3051.jpg",
+    "boissonseau-ain-saiss-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1733239818/product/252dd92a9a4d5e76f3946a4acbf3e5bf.webp",
+    "boissonseau-ain-atlas-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1614349065/product_optimized/b02a592ccee335e63fcd87477e17fa45.webp",
+    "boissonsjus-marrakech-orange-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1737983096/product/34be48728c5cc1acca99b6ea671c9411.webp",
+    "boissonsjus-rani-orange-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/09/0d/e4fe324b8b1cae3eece135947e21.jpg",
+    "boissonsjus-rani-orange-v1": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/74/6a/62c8bebbfa58e05dfe07783ba0eb.jpg",
+    "boissonsboisson-energisante-speed-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1735981848/product/017e72a839f15ce0cbac2cbe85566309.webp",
+    "boissonseau-oulmes-gazeuse-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1747660205/product/418e8d2e349422c75f17a8b749d8fc3d.webp",
+    "boissonseau-oulmes-gazeuse-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1747662080/product/ee1359509fb7102bc4253dc0f71818a0.webp",
+    "boissonsjus-d-ananas-marrakech-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1737983030/product/2eae0389785966ca1a7088f9720d4ae3.webp",
+    "boissonsjus-pomme-rani-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/95/cc/249ced8df7d677f258382ea46988.jpg",
+    "boissonscafe-glace-nescafe-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/d8/8b/f422b7efa6f119ed786a78127b4d.jpg",
+    "boissonslimonade-hawai-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/a2/cd/5d77efad45faee324ad489397f5d.jpg",
+    "boissonsjus-multifruits-marrakech-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/a7/2d/6445646e4c9bba4d201dd66116ca.jpg",
+    "boissonseau-bahia-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1614342818/product_optimized/a3a9f30a71514af3a0a6b7b1e6dda040.webp",
+    "snacks-aperitifchips-chipsy-nature-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1754298674/product/8c3c526f4e9a8e70b26e8c135f41be08.webp",
+    "snacks-aperitifcacahuetes-grillees-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1747406300/product/694cb2a026add44cfdb277902fee7f8c.webp",
+    "snacks-aperitifcacahuetes-grillees-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1747406300/product/694cb2a026add44cfdb277902fee7f8c.webp",
+    "snacks-aperitifolives-vertes-aicha-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1744365435/product/76d517a7c009612b572d98b61cad1f28.webp",
+    "snacks-aperitifnoix-de-cajou-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1783110599/product/4d0adee1f981285ece03d50b840c9686.webp",
+    "snacks-aperitifolives-noires-aicha-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/fc/58/0e93aa51f59359eb04c0a491a204.jpg",
+    "snacks-aperitiftuiles-salees-au-fromage-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/8e/6a/b82aa27802ffe33b6e030497dd95.jpg",
+    "snacks-aperitifbretzels-sales-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/22/c5/829f3a49b2c32306774000ddb871.jpg",
+    "snacks-aperitifchips-lay-s-nature-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1773221503/product/54f58b247805b641a72f78874ecaa698.webp",
+    "snacks-aperitifgraines-de-tournesol-grillees-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/f9/19/b71a8386493160513b0999000c9f.jpg",
+    "hygiene-entretieneau-de-javel-sanytol-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/34327_1.webp",
+    "hygiene-entretienassouplissant-cajoline-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1720517379/product/09083dc8dd14db8f0d047c916710bb25.webp",
+    "hygiene-entretiendentifrice-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1786638718/product/2bff7f1d1c0df64924eea649c4dc8d28.webp",
+    "hygiene-entretiendentifrice-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1786638718/product/2bff7f1d1c0df64924eea649c4dc8d28.webp",
+    "hygiene-entretienshampoing-head-shoulders-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1632735992/product_optimized/f4aa7d0952454c9758fda361cd05c556.webp",
+    "hygiene-entretieneponges-recurantes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751310766/product/e8d080259f4dbbd019e2b5eb057574de.webp",
+    "hygiene-entretienpapier-toilette-bimo-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1686573846/product_optimized/3947b7ee6c0974e4ec935729bf2b6178.webp",
+    "hygiene-entretiennettoyant-multi-usage-ajax-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/661003_1.webp",
+    "hygiene-entretiendetergent-vaisselle-mains-fairy-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/8d/58/8b457eec3b06f5568612d94b353b.jpg",
+    "hygiene-entretienserviettes-hygieniques-always-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/4f/cf/f22499c654c8296c7caa436f785b.jpg",
+    "hygiene-entretiencoton-tiges-q-tips-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1779178844/product/a67dc17a612e694dbc51207338e71bff.webp",
+    "hygiene-entretienmouchoirs-en-papier-bimo-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/03/6c/ea2909877927599ea61855878b3b.jpg",
+    "hygiene-entretiengel-douche-nivea-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1750191306/product/a198bd602da7b4df05bc2c6414c1be60.webp",
+    "hygiene-entretiencreme-hydratante-nivea-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1750189840/product/06f6d9140e1a9a21bf4d9aabed96ccaf.webp",
+    "hygiene-entretienbrosse-a-dents-signal-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/91/f0/07a51a4e609a525ed3e1cd531e01.jpg",
+    "hygiene-entretiennettoyant-vitres-ajax-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1623091240/product_optimized/2dbce11bd482c0501d8e05fc2800506c.webp",
+    "hygiene-entretienlingettes-desinfectantes-sanytol-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/a2/72/833377b401f1ffbe0a23dc9b2f03.jpg",
+    "fruits-legumestomates-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751382220/product/a820bb11f69fe199bdf9fd131b9ca362.webp",
+    "fruits-legumespommes-de-terre-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381844/product/94d4abaa987e256950ef7f71340e7996.webp",
+    "fruits-legumesoignons-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/17/2f/ce1ce1c8c676eed56bd1ceaa2730.jpg",
+    "fruits-legumescarottes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751384253/product/b28ff07f7228de6c76050425bf4ebef9.webp",
+    "fruits-legumespoivrons-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381916/product/f324f5d30a8bcbd6b1d161c06ce34e66.webp",
+    "fruits-legumesconcombres-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381669/product/19ff0e3435d88d9be6e244715a7710a5.webp",
+    "fruits-legumesail-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1761732054/product/1559e82f6865c11ace9198c172bf7182.webp",
+    "fruits-legumescitrons-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587300561/product_optimized/29e5fb4b89dd884f9ee032e3729d00a0.webp",
+    "fruits-legumesbananes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587300488/product_optimized/86199d6fb1d0ee856ae27fb67edb795d.webp",
+    "fruits-legumesoranges-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/392117_1.webp",
+    "fruits-legumespommes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381332/product/b7ffe3c80c3a3b93824dfc559106f637.webp",
+    "fruits-legumescourgettes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587309651/product_optimized/89925bd049a850b0f5cac8da90e4eba4.webp",
+    "fruits-legumesaubergines-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751381518/product/bfd2e025dba74f0ffadcbce8bcb7b0d6.webp",
+    "fruits-legumesepinards-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1620743146/product_optimized/c9f27627dace517b54f0bc621042d704.webp",
+    "fruits-legumeschoux-fleurs-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/c2/d0/03ba9c6b6885f3d46a67979b7872.jpg",
+    "fruits-legumespasteque-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587303829/product_optimized/1441596bfdb8acb6f6a388118151470d.webp",
+    "fruits-legumesmelon-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1756198879/product/f4a55ebe436b70f7e69ce488ce6846a8.webp",
+    "fruits-legumesraisin-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1785234177/product/afbf64bac8ef6da99f642131a247626d.webp",
+    "viande-volaille-poissonpoulet-entier-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1591215388/product_optimized/f7c611c0c134e3c02b7dd6d417cb5c9e.webp",
+    "viande-volaille-poissoncuisses-de-poulet-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1749642968/product/d5fe43c16f60ab6da70bfc374e3c5685.webp",
+    "viande-volaille-poissonviande-hachee-de-b-uf-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1748965831/product/d128d6f6d2673859b354146ab77736fa.webp",
+    "viande-volaille-poissonmerguez-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1760370279/product/2211ba66459a781ef7448f99e26c518a.webp",
+    "viande-volaille-poissonescalope-de-dinde-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1744050285/product/e63d6a58d5f8f47a03e4878fbcbdf8cb.webp",
+    "viande-volaille-poissondorade-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/bb/96/455f5910eda2d20e83af61f776e7.jpg",
+    "viande-volaille-poissonfoie-de-poulet-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/57/0d/47de5a4a8271e4f4840a26116b1f.jpg",
+    "viande-volaille-poissonailes-de-poulet-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1744276116/product/84309987c7895cc57cba2f3e9f1ac5f6.webp",
+    "viande-volaille-poissoncotelettes-d-agneau-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587303926/product_optimized/2bcb2077f1357292acb3ac563cab5be5.webp",
+    "viande-volaille-poissonepaule-d-agneau-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587303798/product_optimized/7fc13f621b726e798ba428448894a649.webp",
+    "viande-volaille-poissonsaucisses-de-dinde-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/d2/67/dbbab12c5880a8666e66fa545796.jpg",
+    "viande-volaille-poissonthon-frais-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/17/00/2bc78fee14e7dbead783076e6a90.jpg",
+    "surgeles-boulangeriepain-de-mie-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1784548119/product/6ca3622a3c30c35c552d0f9944479bb5.webp",
+    "surgeles-boulangeriebaguette-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1583089597/marjane_assets/april_prod_reduced/1096265_1.webp",
+    "surgeles-boulangeriefrites-surgelees-findus-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1735161934/product/3548cc322ae7f182fcec4e4c5d268b20.webp",
+    "surgeles-boulangeriefrites-surgelees-findus-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1737825174/product/6bcef0122ae9581989c8621068e73434.webp",
+    "surgeles-boulangeriepoisson-pane-findus-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1766136640/product/f24cdb23cc7190b10e24f6cf037fc41d.webp",
+    "surgeles-boulangerieglace-vanille-extreme-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1758015716/product/9e7a9c7aa212777100c8b5498c64f826.webp",
+    "surgeles-boulangeriepain-complet-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1784548119/product/6ca3622a3c30c35c552d0f9944479bb5.webp",
+    "surgeles-boulangerieepinards-surgeles-findus-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/b9/9c/d56926039e34d66ed7b3c4b64cc5.jpg",
+    "surgeles-boulangeriebrocolis-surgeles-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/41/d5/88dc81503394e13d2400e31bbd7f.jpg",
+    "surgeles-boulangerielasagnes-surgelees-marino-v0": "https://storage.googleapis.com/sales-img-ma-live/web/cache/sylius_medium/9a/64/e0dab1ecd9dbf47fa2add678c581.jpg",
+    "epicerie-saleehuile-d-olive-lesieur-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1754061977/product/974d17af5e002416ed5700b8d3e0fd46.webp",
+    "epicerie-saleepates-chourouk-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1666354385/product_optimized/849aef49ba43baf8a65e5be01298e26e.webp",
+    "epicerie-saleepates-chourouk-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1737403357/product/39c3e630a3294e1b7fb1a047fb5b3a3b.webp",
+    "epicerie-saleecannelle-moulue-alwane-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1744796544/product/eb9d750e8627531db257df254194deea.webp",
+    "epicerie-sucreecafe-moulu-dallah-v1": "https://res.cloudinary.com/dcphm6bor/image/upload/v1777288924/product/7ab2eeb42d3256d871ef9514e1123146.webp",
+    "epicerie-sucreethe-sultan-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1741346870/product/6e1e902b6071b0e69899816a51149ac8.webp",
+    "epicerie-sucreeconfiture-aicha-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587660760/product_optimized/97bfb88859c606b8b7fc56e4900bb1a9.webp",
+    "epicerie-sucreebarquettes-bimo-fraise-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1769608937/product/2685b37ec8dfb23fd6c5eec3c7204c28.webp",
+    "epicerie-sucreeconfiture-abricot-aicha-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1587660760/product_optimized/97bfb88859c606b8b7fc56e4900bb1a9.webp",
+    "produits-laitierscreme-chantilly-gloria-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1786959340/product/5469b12db1699f3859f8e9ac8a043925.webp",
+    "boissonseau-sidi-ali-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1614342660/product_optimized/5454ffe76c30c41fddf1547a430552cc.webp",
+    "boissonscoca-cola-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1741609447/product/20167372c121c5cf287a46d277f55f69.webp",
+    "snacks-aperitifpop-corn-sucre-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1748877630/product/7ea14524ede397fbe5ff360eece0c971.webp",
+    "snacks-aperitifbiscuits-sales-aperitif-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1729761507/product/d102777d8ec0b3af84c548280bf23a81.webp",
+    "snacks-aperitifchips-chipsy-paprika-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1754298224/product/842680913a69d02ac37338efe5f913de.webp",
+    "snacks-aperitifpistaches-grillees-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1618243910/product_optimized/0afa1de1c9a321a24406f65a57d738c0.webp",
+    "snacks-aperitifbiscuits-aperitif-crackers-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1757531874/product/f85ecaed6c6c79a899f32a77eaa9207a.webp",
+    "hygiene-entretienrasoirs-gillette-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1632748961/product_optimized/37ee680464fa2e128fcba26dc819f0b9.webp",
+    "hygiene-entretiensacs-poubelle-bimo-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1759243961/product/a46dde3b541397210bf74897d4267f56.webp",
+    "hygiene-entretieninsecticide-baygon-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1758534462/product/368ed674a7fa5e5706cd33c98e89c3cf.webp",
+    "viande-volaille-poissonmerlan-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1737826726/product/00df910895822ba020623ae4b865caf6.webp",
+    "viande-volaille-poissoncrevettes-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1738523417/product/7b62446f32af2c573119f277a2f4225c.webp",
+    "viande-volaille-poissonsteak-hache-de-b-uf-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1748966465/product/f4dfabbb76cf4d211ab33bc6015d137a.webp",
+    "viande-volaille-poissoncalamars-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1722280108/product/760b9e82184a7cc8f71caeb6cc6f81da.webp",
+    "viande-volaille-poissonpigeon-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1751458281/product/48c266b867db63895cb4dbff3f32c654.webp",
+    "surgeles-boulangeriecroissants-v0": "https://res.cloudinary.com/dcphm6bor/image/upload/v1635771995/product_optimized/9be73937ec3f54043e857b2ba9cba130.webp"
+  };
+
+  function slug(s){ return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-"); }
+
+  function fam(name,cat,variantDefs){
+    var fid = slug(cat+name);
+    return {
+      id: fid, name:name, cat:cat,
+      variants: variantDefs.map(function(d,i){
+        return {
+          id: fid+"-v"+i, brand: d[0]||null, unit: d[1],
+          prices:{marjane:d[2],carrefour:d[3],bim:d[4],aswak:d[5]}
+        };
+      })
+    };
+  }
+
+  function p(name,unit,cat,marjane,carrefour,bim,aswak){
+    return fam(name,cat,[[null,unit,marjane,carrefour,bim,aswak]]);
+  }
+
+  var STORES = [
+    {key:"marjane", label:"Marjane"},
+    {key:"carrefour", label:"Carrefour"},
+    {key:"bim", label:"BIM"},
+    {key:"aswak", label:"Aswak Salam"}
+  ];
+
+  var byId = {};
+  var variantIndex = {};
+  PRODUCTS.forEach(function(pr){
+    byId[pr.id]=pr;
+    pr.variants.forEach(function(v){ variantIndex[v.id] = {family:pr, variant:v}; });
+  });
+
+  var state = { cat:"Tout", search:"", sort:"defaut", onlyAll:false, onlyFav:false, cart:{}, variantSel:{} };
+
+  var FAV_KEY = "soukprix-favorites";
+  var favorites = {};
+  (function loadFavorites(){
+    try{ var raw = localStorage.getItem(FAV_KEY); if(raw) favorites = JSON.parse(raw); }catch(e){}
+  })();
+  function saveFavorites(){ try{ localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); }catch(e){} }
+  function toggleFavorite(famId){
+    if(favorites[famId]) delete favorites[famId]; else favorites[famId] = true;
+    saveFavorites();
+  }
+  function favIcon(active){
+    return '<svg viewBox="0 0 24 24" fill="'+(active?"currentColor":"none")+'" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.9.8-5 4.8 1.3 6.9L12 17.9 5.9 21.3l1.3-6.9-5-4.8 6.9-.8z"/></svg>';
+  }
+
+  function selectedVariant(fam){
+    var idx = state.variantSel[fam.id] || 0;
+    if(idx>=fam.variants.length) idx = 0;
+    return fam.variants[idx];
+  }
+
+  var PRESETS = {
+    etudiant:[
+      ["Pâtes Chourouk",2],["Riz Dari",1],["Huile Lesieur Tournesol",1],["Œufs frais",1],
+      ["Lait Centrale Danone",2],["Nescafé 3 en 1",1],["Pain de mie",1],["Yaourt Danone Nature",1],
+      ["Thon Titus",2],["Sucre Cosumar",1]
+    ],
+    famille:[
+      ["Poulet entier",1],["Riz Dari",2],["Huile Lesieur Tournesol",1],["Lait Centrale Danone",4],
+      ["Yaourt Danone Nature",2],["Œufs frais",1],["Tomates",2],["Pommes de terre",2],["Oignons",1],
+      ["Pain de mie",2],["Fromage Frais Jibal",1],["Coca-Cola",2],["Papier Toilette Bimo",1],["Lessive Poudre",1]
+    ],
+    petitdej:[
+      ["Pain de mie",1],["Beurre Président",1],["Confiture Aicha",1],["Miel Ouazzani",1],
+      ["Thé Sultan",1],["Lait Centrale Danone",1],["Huile d'Olive Lesieur",1],["Œufs frais",1],["Msemen Surgelé",1]
+    ]
+  };
+  function applyPreset(key){
+    var items = PRESETS[key]; if(!items) return;
+    var cart = {};
+    items.forEach(function(it){ var fam=find(it[0]); if(fam) cart[fam.variants[0].id]=it[1]; });
+    state.cart = cart;
+    persistWholeCart(cart);
+    render();
+    showPage("liste");
+  }
+  document.querySelectorAll("[data-preset]").forEach(function(btn){
+    btn.addEventListener("click",function(){ applyPreset(btn.getAttribute("data-preset")); });
+  });
+
+  function find(name){ return PRODUCTS.filter(function(x){return x.name===name;})[0]; }
+  function fmt(n){ return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function parseUnitQty(unitStr){
+    if(!unitStr) return null;
+    var s = unitStr.toLowerCase();
+    var m = s.match(/([\d]+(?:[.,]\d+)?)\s*(ml|cl|kg|g|l)\b/);
+    if(m){
+      var qty = parseFloat(m[1].replace(",", "."));
+      var u = m[2];
+      if(u==="ml") return {qty: qty/1000, kind:"L"};
+      if(u==="cl") return {qty: qty/100, kind:"L"};
+      if(u==="l") return {qty: qty, kind:"L"};
+      if(u==="g") return {qty: qty/1000, kind:"kg"};
+      if(u==="kg") return {qty: qty, kind:"kg"};
+    }
+    var m2 = s.match(/x\s*(\d+)/) || s.match(/(\d+)\s*(?:portions|sachets|sticks|unit[ée]s|pi[eè]ces)/);
+    if(m2){ return {qty: parseInt(m2[1],10), kind:"pièce"}; }
+    return null;
+  }
+  function unitPriceLabel(price, unitStr){
+    var parsed = parseUnitQty(unitStr);
+    if(!parsed || !parsed.qty || parsed.qty===1) return "";
+    return fmt(price/parsed.qty)+" DH/"+parsed.kind;
+  }
+  function unitPriceValue(variant){
+    var b = bestStoreFor(variant);
+    if(b.min==null) return Infinity;
+    var parsed = parseUnitQty(variant.unit);
+    if(!parsed || !parsed.qty) return b.min;
+    return b.min/parsed.qty;
+  }
+
+  function iconMinus(){ return '<svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>'; }
+  function iconPlus(){ return '<svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'; }
+
+  function bestStoreFor(pr){
+    var min=null, minKey=null, max=null;
+    STORES.forEach(function(s){
+      var v = pr.prices[s.key];
+      if(v==null) return;
+      if(min===null||v<min){min=v;minKey=s.key;}
+      if(max===null||v>max){max=v;}
+    });
+    return {min:min,minKey:minKey,max:max};
+  }
+
+  /* ---- navigation ---- */
+  var PAGES = ["accueil","liste","comparateur","enseignes"];
+  function showPage(id){
+    if(PAGES.indexOf(id)===-1) id = "accueil";
+    PAGES.forEach(function(pg){
+      document.getElementById("page-"+pg).classList.toggle("active", pg===id);
+    });
+    document.querySelectorAll(".nav-link").forEach(function(btn){
+      btn.classList.toggle("active", btn.getAttribute("data-page")===id);
+    });
+    if(location.hash.slice(1)!==id) location.hash = id;
+    window.scrollTo({top:0,behavior:"instant"});
+  }
+  document.querySelectorAll(".nav-link").forEach(function(btn){
+    btn.addEventListener("click",function(){ showPage(btn.getAttribute("data-page")); });
+  });
+  document.querySelectorAll("[data-nav]").forEach(function(btn){
+    btn.addEventListener("click",function(){ showPage(btn.getAttribute("data-nav")); });
+  });
+  document.querySelectorAll("[data-nav-cat]").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      state.cat = btn.getAttribute("data-nav-cat");
+      showPage("comparateur");
+      render();
+    });
+  });
+  document.getElementById("cartPillBtn").addEventListener("click",function(){ showPage("liste"); });
+  window.addEventListener("hashchange",function(){ showPage(location.hash.slice(1)); });
+
+  /* ---- comparateur ---- */
+  function countByCat(cat){ return PRODUCTS.filter(function(pr){ return pr.cat===cat; }).length; }
+
+  function renderChips(){
+    var row = document.getElementById("chipRow");
+    var all = ["Tout"].concat(CATS);
+    row.innerHTML = all.map(function(c){
+      var n = c==="Tout" ? PRODUCTS.length : countByCat(c);
+      var ic = c==="Tout" ? "" : '<svg class="chip-icon" viewBox="0 0 24 24">'+(ICONS[c]||"")+'</svg>';
+      return '<button class="chip'+(state.cat===c?' active':'')+'" data-cat="'+esc(c)+'" type="button">'+ic+esc(c)+' ('+n+')</button>';
+    }).join("");
+    row.querySelectorAll(".chip").forEach(function(btn){
+      btn.addEventListener("click",function(){ state.cat=btn.getAttribute("data-cat"); render(); });
+    });
+  }
+
+  function renderQuickCats(){
+    var row = document.getElementById("quickCats");
+    if(!row) return;
+    row.innerHTML = CATS.map(function(c){
+      return '<button class="quickcat" data-nav-cat="'+esc(c)+'" type="button">'+
+        '<span class="quickcat-badge"><svg viewBox="0 0 24 24">'+(ICONS[c]||"")+'</svg></span>'+
+        '<span class="quickcat-label">'+esc(c)+'</span>'+
+      '</button>';
+    }).join("");
+    row.querySelectorAll("[data-nav-cat]").forEach(function(btn){
+      btn.addEventListener("click",function(){
+        state.cat = btn.getAttribute("data-nav-cat");
+        showPage("comparateur");
+        render();
+      });
+    });
+  }
+
+  function renderSortRow(){
+    document.querySelectorAll(".sort-chip").forEach(function(btn){
+      var isActive = btn.getAttribute("data-sort")===state.sort;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+    var toggle = document.getElementById("onlyAllToggle");
+    toggle.classList.toggle("active", state.onlyAll);
+    toggle.setAttribute("aria-pressed", state.onlyAll ? "true" : "false");
+    var favToggle = document.getElementById("onlyFavToggle");
+    favToggle.classList.toggle("active", state.onlyFav);
+    favToggle.setAttribute("aria-pressed", state.onlyFav ? "true" : "false");
+  }
+  document.querySelectorAll(".sort-chip").forEach(function(btn){
+    btn.addEventListener("click",function(){ state.sort = btn.getAttribute("data-sort"); render(); });
+  });
+  document.getElementById("onlyAllToggle").addEventListener("click",function(){
+    state.onlyAll = !state.onlyAll;
+    render();
+  });
+  document.getElementById("onlyFavToggle").addEventListener("click",function(){
+    state.onlyFav = !state.onlyFav;
+    render();
+  });
+
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
+  function matches(fam){
+    if(state.cat!=="Tout" && fam.cat!==state.cat) return false;
+    if(state.search){
+      var q = stripAccents(state.search.toLowerCase());
+      var nameHit = stripAccents(fam.name.toLowerCase()).indexOf(q)!==-1;
+      var brandHit = fam.variants.some(function(v){ return v.brand && stripAccents(v.brand.toLowerCase()).indexOf(q)!==-1; });
+      if(!nameHit && !brandHit) return false;
+    }
+    if(state.onlyAll){
+      var sv = selectedVariant(fam);
+      if(STORES.some(function(s){ return sv.prices[s.key]==null; })) return false;
+    }
+    if(state.onlyFav && !favorites[fam.id]) return false;
+    return true;
+  }
+
+  function savingsPct(pr){
+    var b = bestStoreFor(pr);
+    if(b.min==null || b.max==null || b.max<=b.min) return 0;
+    return (b.max-b.min)/b.max*100;
+  }
+
+  function renderTable(){
+    var tbody = document.getElementById("tableBody");
+    var filtered = PRODUCTS.filter(matches);
+    var groups;
+
+    if(state.sort==="defaut"){
+      groups = CATS.map(function(cat){
+        return {cat:cat, items:filtered.filter(function(pr){ return pr.cat===cat; })};
+      }).filter(function(g){ return g.items.length>0; });
+    } else {
+      var sorted = filtered.slice();
+      if(state.sort==="economie"){
+        sorted.sort(function(a,b){ return savingsPct(selectedVariant(b))-savingsPct(selectedVariant(a)); });
+      } else if(state.sort==="prix"){
+        sorted.sort(function(a,b){
+          var ba=bestStoreFor(selectedVariant(a)).min, bb=bestStoreFor(selectedVariant(b)).min;
+          return (ba==null?Infinity:ba)-(bb==null?Infinity:bb);
+        });
+      } else if(state.sort==="unitprix"){
+        sorted.sort(function(a,b){ return unitPriceValue(selectedVariant(a))-unitPriceValue(selectedVariant(b)); });
+      }
+      groups = sorted.length ? [{cat:null, items:sorted}] : [];
+    }
+
+    var total = groups.reduce(function(a,g){return a+g.items.length;},0);
+    var sortSuffix = state.sort==="economie" ? " · triés par économie" : state.sort==="prix" ? " · triés par prix" : state.sort==="unitprix" ? " · triés par prix au kg/L" : "";
+    document.getElementById("resultLabel").textContent = total + (total===1?" produit":" produits") + (state.cat!=="Tout" ? " · "+state.cat : "") + sortSuffix;
+
+    if(total===0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Aucun produit ne correspond à votre recherche.<br><button class="clear-link" id="resetFiltersBtn" type="button" style="margin-top:8px;">Réinitialiser les filtres</button></td></tr>';
+      var resetBtn = document.getElementById("resetFiltersBtn");
+      if(resetBtn) resetBtn.addEventListener("click", function(){
+        state.cat = "Tout"; state.search = ""; state.onlyAll = false; state.onlyFav = false;
+        document.getElementById("searchInput").value = "";
+        render();
+      });
+      return;
+    }
+
+    var html = "";
+    groups.forEach(function(g){
+      if(g.cat){ html += '<tr class="cat-row"><td colspan="6">'+catIcon(g.cat)+esc(g.cat)+'</td></tr>'; }
+      g.items.forEach(function(fam){
+        var vIdx = state.variantSel[fam.id] || 0;
+        if(vIdx>=fam.variants.length) vIdx = 0;
+        var variant = fam.variants[vIdx];
+        var best = bestStoreFor(variant);
+        var qty = state.cart[variant.id]||0;
+        html += '<tr class="product-row" data-id="'+variant.id+'">';
+        var isFav = !!favorites[fam.id];
+        html += '<td class="name-cell"><div class="name-flex">'+productMedia(fam, variant)+'<div>';
+        html += '<div class="p-name">'+esc(fam.name)+'</div>';
+        html += '<div class="p-unit">'+(variant.brand?'<b>'+esc(variant.brand)+'</b> · ':'')+esc(variant.unit)+'</div>';
+        if(fam.variants.length>1){
+          html += '<div class="variant-row">'+fam.variants.map(function(v,i){
+            var label = (v.brand?v.brand+' ':'')+v.unit;
+            return '<button class="variant-chip'+(i===vIdx?' active':'')+'" data-fam="'+fam.id+'" data-vidx="'+i+'" type="button" aria-pressed="'+(i===vIdx?'true':'false')+'">'+esc(label)+'</button>';
+          }).join('')+'</div>';
+        }
+        html += '</div><button class="fav-btn'+(isFav?' active':'')+'" data-fav="'+fam.id+'" type="button" aria-label="Favori" aria-pressed="'+(isFav?'true':'false')+'">'+favIcon(isFav)+'</button></div></td>';
+        STORES.forEach(function(s){
+          var v = variant.prices[s.key];
+          if(v==null){
+            html += '<td class="price-cell" data-label="'+esc(s.label)+'"><span class="dash">—</span></td>';
+          } else {
+            var isBest = best.minKey===s.key && best.max>best.min;
+            var isOnlyBest = best.minKey===s.key;
+            var cls = "price-cell"+(isOnlyBest?" best":"");
+            var savePct = (isBest) ? Math.round((best.max-best.min)/best.max*100) : 0;
+            var live = variant.liveMeta && variant.liveMeta[s.key];
+            var up = unitPriceLabel(v, variant.unit);
+            html += '<td class="'+cls+'" data-label="'+esc(s.label)+'"><span class="price-main"><span class="price">'+fmt(v)+' DH</span>';
+            if(up){ html += '<span class="unit-price">'+up+'</span>'; }
+            html += '</span>';
+            if(live){ html += '<span class="live-dot" title="Vérifié le '+esc(live.updatedAt)+' sur '+esc(live.source)+'"></span>'; }
+            if(isBest && savePct>0){ html += '<span class="save-tag">-'+savePct+'%</span>'; }
+            html += '</td>';
+          }
+        });
+        html += '<td class="add-cell" data-label="Ajouter">'+ (qty>0 ? stepperHtml(variant.id,qty) : '<button class="add-btn" data-add="'+variant.id+'" type="button" aria-label="Ajouter">'+iconPlus()+'</button>') +'</td>';
+        html += '</tr>';
+      });
+    });
+    tbody.innerHTML = html;
+
+    tbody.querySelectorAll("[data-add]").forEach(function(btn){
+      btn.addEventListener("click",function(){ changeQty(btn.getAttribute("data-add"),1); });
+    });
+    tbody.querySelectorAll("[data-inc]").forEach(function(btn){
+      btn.addEventListener("click",function(){ changeQty(btn.getAttribute("data-inc"),1); });
+    });
+    tbody.querySelectorAll("[data-dec]").forEach(function(btn){
+      btn.addEventListener("click",function(){ changeQty(btn.getAttribute("data-dec"),-1); });
+    });
+    tbody.querySelectorAll(".variant-chip").forEach(function(btn){
+      btn.addEventListener("click",function(e){
+        e.stopPropagation();
+        state.variantSel[btn.getAttribute("data-fam")] = parseInt(btn.getAttribute("data-vidx"),10);
+        renderTable();
+      });
+    });
+    tbody.querySelectorAll("[data-fav]").forEach(function(btn){
+      btn.addEventListener("click",function(e){
+        e.stopPropagation();
+        toggleFavorite(btn.getAttribute("data-fav"));
+        renderTable();
+      });
+    });
+  }
+
+  function stepperHtml(id,qty){
+    return '<span class="qty-stepper">'+
+      '<button data-dec="'+id+'" type="button" aria-label="Retirer">'+iconMinus()+'</button>'+
+      '<span class="n">'+qty+'</span>'+
+      '<button data-inc="'+id+'" type="button" aria-label="Ajouter">'+iconPlus()+'</button>'+
+    '</span>';
+  }
+
+  /* ---- cart persistence via Supabase ---- */
+  function changeQty(id,delta){
+    var cur = state.cart[id]||0;
+    var next = cur+delta;
+    if(next<=0){ delete state.cart[id]; } else { state.cart[id]=next; }
+    render();
+    persistOne(id, next);
+  }
+
+  var isGuest = false;
+  var GUEST_KEY = "soukprix-guest-cart-v1";
+
+  function saveGuestCart(cart){
+    try{ localStorage.setItem(GUEST_KEY, JSON.stringify(cart)); }catch(e){}
+  }
+  function loadGuestCart(){
+    try{
+      var raw = localStorage.getItem(GUEST_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return {};
+  }
+
+  function persistOne(productId, qty){
+    if(isGuest){ saveGuestCart(state.cart); return; }
+    if(!currentUser) return;
+    if(qty<=0){
+      sb.from("cart_items").delete().eq("user_id", currentUser.id).eq("product_id", productId).then(function(){}).catch(function(){
+        showToast("Hors ligne — cette modification n'est pas encore synchronisée.");
+      });
+    } else {
+      sb.from("cart_items").upsert({user_id: currentUser.id, product_id: productId, qty: qty, updated_at: new Date().toISOString()}, {onConflict:"user_id,product_id"}).then(function(){}).catch(function(){
+        showToast("Hors ligne — cette modification n'est pas encore synchronisée.");
+      });
+    }
+  }
+
+  function persistWholeCart(cart){
+    if(isGuest){ saveGuestCart(cart); return; }
+    if(!currentUser) return;
+    sb.from("cart_items").delete().eq("user_id", currentUser.id).then(function(){
+      var rows = Object.keys(cart).map(function(pid){
+        return {user_id: currentUser.id, product_id: pid, qty: cart[pid], updated_at: new Date().toISOString()};
+      });
+      if(rows.length) sb.from("cart_items").insert(rows).then(function(){}).catch(function(){});
+    }).catch(function(){
+      showToast("Hors ligne — cette modification n'est pas encore synchronisée.");
+    });
+  }
+
+  function loadCartFromSupabase(){
+    if(isGuest) return Promise.resolve(loadGuestCart());
+    if(!currentUser) return Promise.resolve({});
+    return sb.from("cart_items").select("product_id, qty").eq("user_id", currentUser.id).then(function(res){
+      var cart = {};
+      (res.data||[]).forEach(function(row){ cart[row.product_id] = row.qty; });
+      return cart;
+    }).catch(function(){
+      showToast("Impossible de charger ta liste (vérifie ta connexion).");
+      return {};
+    });
+  }
+
+  /* ---- ma liste ---- */
+  var _lastCartTotal = 0;
+  function renderCart(){
+    var ids = Object.keys(state.cart);
+    var cartTotal = ids.reduce(function(a,id){return a+state.cart[id];},0);
+    var countEl = document.getElementById("cartCount");
+    countEl.textContent = cartTotal;
+    if(cartTotal>_lastCartTotal){
+      countEl.classList.remove("bump");
+      void countEl.offsetWidth;
+      countEl.classList.add("bump");
+      setTimeout(function(){ countEl.classList.remove("bump"); }, 260);
+    }
+    _lastCartTotal = cartTotal;
+    document.getElementById("receiptCount").textContent = ids.length + (ids.length===1?" art.":" arts.");
+
+    var itemsEl = document.getElementById("cartItems");
+    if(ids.length===0){
+      itemsEl.innerHTML = '<p class="no-items">Votre liste est vide. Ajoutez des produits depuis le Comparateur.</p>';
+    } else {
+      itemsEl.innerHTML = ids.map(function(id){
+        var entry = variantIndex[id]; if(!entry) return "";
+        var fam = entry.family, variant = entry.variant;
+        var qty = state.cart[id];
+        var best = bestStoreFor(variant);
+        var bestLabel = best.minKey ? STORES.filter(function(s){return s.key===best.minKey;})[0].label : "—";
+        var subtitle = (variant.brand?esc(variant.brand)+' · ':'')+esc(variant.unit);
+        return '<div class="cart-item">'+
+          '<div class="cart-item-row">'+
+            '<div><div class="cart-item-name">'+esc(fam.name)+' <span style="color:var(--ink-faint);font-size:0.72rem;">'+subtitle+'</span></div>'+
+            '<span class="cart-item-cheapest">moins cher : '+esc(bestLabel)+'</span></div>'+
+            '<div class="cart-item-controls">'+ stepperHtml(id,qty) +'</div>'+
+          '</div>'+
+        '</div>';
+      }).join("");
+    }
+
+    var totals = STORES.map(function(s){
+      var sum=0, missing=0;
+      ids.forEach(function(id){
+        var entry = variantIndex[id]; if(!entry) return;
+        var variant = entry.variant; var qty = state.cart[id];
+        var v = variant.prices[s.key];
+        if(v==null){ missing++; } else { sum += v*qty; }
+      });
+      return {key:s.key, label:s.label, sum:sum, missing:missing};
+    });
+
+    var minSum = null, minKey = null, maxSum = null;
+    if(ids.length>0){
+      totals.forEach(function(t){
+        if(minSum===null || t.sum<minSum){ minSum=t.sum; minKey=t.key; }
+        if(maxSum===null || t.sum>maxSum){ maxSum=t.sum; }
+      });
+    }
+
+    var totalsEl = document.getElementById("totals");
+    if(ids.length===0){
+      totalsEl.innerHTML = '<p class="no-totals">Le détail par enseigne apparaîtra ici dès que votre liste contient un article.</p>';
+    } else {
+      totalsEl.innerHTML = totals.map(function(t){
+        var isBest = t.key===minKey;
+        return '<div class="total-row'+(isBest?' best':'')+'">'+
+          '<div class="total-store"><span class="sname">'+esc(t.label)+'</span>'+
+          (t.missing>0 ? '<span class="miss">'+t.missing+' article'+(t.missing>1?'s':'')+' indisponible'+(t.missing>1?'s':'')+'</span>' : (isBest ? '<span class="ribbon">Meilleur total</span>' : '')) +
+          '</div>'+
+          '<span class="total-amt">'+fmt(t.sum)+' DH</span>'+
+        '</div>';
+      }).join("");
+    }
+
+    var callEl = document.getElementById("savingsCall");
+    if(ids.length>0 && maxSum>minSum){
+      var bestLabelFull = totals.filter(function(t){return t.key===minKey;})[0].label;
+      callEl.innerHTML = '<div class="savings-call">Économisez <b>'+fmt(maxSum-minSum)+' DH</b> en faisant vos courses chez <b style="font-family:inherit;">'+esc(bestLabelFull)+'</b> plutôt que dans l\'enseigne la plus chère.</div>';
+    } else {
+      callEl.innerHTML = "";
+    }
+  }
+
+  /* ---- accueil stats ---- */
+  function renderHomeStats(){
+    document.getElementById("statProducts").textContent = PRODUCTS.length;
+    var total=0, count=0;
+    PRODUCTS.forEach(function(fam){
+      var b = bestStoreFor(selectedVariant(fam));
+      if(b.min!=null && b.max!=null && b.max>b.min){ total += (b.max-b.min)/b.max*100; count++; }
+    });
+    document.getElementById("statSaving").textContent = count ? Math.round(total/count)+"%" : "—";
+    document.querySelectorAll("[data-cat-count]").forEach(function(el){
+      var cat = el.getAttribute("data-cat-count");
+      el.textContent = countByCat(cat)+" produits";
+    });
+  }
+
+  function render(){
+    renderChips();
+    renderSortRow();
+    renderTable();
+    renderCart();
+  }
+
+  document.getElementById("searchInput").addEventListener("input",function(e){
+    state.search = e.target.value;
+    render();
+  });
+  document.getElementById("clearBtn").addEventListener("click",function(){
+    state.cart = {};
+    persistWholeCart({});
+    render();
+  });
+
+  var toastTimer;
+  function showToast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2600);
+  }
+
+  function buildShareText(){
+    var ids = Object.keys(state.cart);
+    if(!ids.length) return "Ma liste SoukPrix est vide pour le moment.";
+    var lines = ["🛒 Ma liste SoukPrix :", ""];
+    ids.forEach(function(id){
+      var entry = variantIndex[id]; if(!entry) return;
+      var qty = state.cart[id];
+      var label = entry.family.name + (entry.variant.brand ? " ("+entry.variant.brand+")" : "") + " — " + entry.variant.unit;
+      lines.push("• "+qty+"x "+label);
+    });
+    var totals = STORES.map(function(s){
+      var sum=0, missing=0;
+      ids.forEach(function(id){
+        var entry = variantIndex[id]; if(!entry) return;
+        var v = entry.variant.prices[s.key];
+        if(v==null){ missing++; } else { sum += v*state.cart[id]; }
+      });
+      return {label:s.label, sum:sum, missing:missing};
+    });
+    var minSum=null, minLabel=null;
+    totals.forEach(function(t){ if(minSum===null||t.sum<minSum){ minSum=t.sum; minLabel=t.label; } });
+    lines.push("");
+    lines.push("Total par enseigne :");
+    totals.forEach(function(t){
+      lines.push(t.label+" : "+fmt(t.sum)+" DH"+(t.missing>0?" ("+t.missing+" article(s) indisponible(s))":""));
+    });
+    if(minLabel) lines.push("", "→ Moins cher chez "+minLabel+" !");
+    lines.push("", "Comparé avec SoukPrix");
+    return lines.join("\n");
+  }
+
+  document.getElementById("shareBtn").addEventListener("click", function(){
+    var text = buildShareText();
+    if(navigator.share){
+      navigator.share({title:"Ma liste SoukPrix", text:text}).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast("Liste copiée dans le presse-papiers !");
+      }).catch(function(){
+        showToast("Impossible de copier automatiquement.");
+      });
+    } else {
+      showToast("Partage non disponible sur ce navigateur.");
+    }
+  });
+
+  /* ---- live store prices (populated from Supabase price_snapshots table, if present) ---- */
+  function loadLivePrices(){
+    sb.from("price_snapshots").select("store, product_name, price, matched_title, updated_at").then(function(res){
+      if(!res.data || !res.data.length) return;
+      var any = {marjane:false, aswak:false};
+      res.data.forEach(function(row){
+        var fam = find(row.product_name);
+        if(!fam) return;
+        var variant = fam.variants[0];
+        var storeKey = row.store;
+        if(storeKey!=="marjane" && storeKey!=="aswak") return;
+        variant.prices[storeKey] = row.price;
+        variant.liveMeta = variant.liveMeta || {};
+        variant.liveMeta[storeKey] = {updatedAt: row.updated_at||"", source: storeKey==="aswak" ? "aswakassalam.com" : "marjane.ma"};
+        any[storeKey] = true;
+      });
+      if(any.aswak) document.getElementById("liveDot").hidden = false;
+      if(any.marjane) document.getElementById("liveDotMarjane").hidden = false;
+      if(any.aswak || any.marjane) document.getElementById("liveNote").hidden = false;
+      renderHomeStats();
+      render();
+    }).catch(function(){});
+  }
+
+  /* ---- auth ---- */
+  var authTab = "login";
+  var AUTH_ERRORS = {
+    "Invalid login credentials": "Email ou mot de passe incorrect.",
+    "Email not confirmed": "Adresse email pas encore confirmée — vérifie ta boîte mail (et les spams).",
+    "User already registered": "Un compte existe déjà avec cet email. Essaie de te connecter plutôt.",
+    "Password should be at least 6 characters": "Le mot de passe doit faire au moins 6 caractères.",
+    "Unable to validate email address: invalid format": "Adresse email invalide."
+  };
+  function frenchAuthError(msg){
+    if(!msg) return "Une erreur est survenue. Réessaie.";
+    for(var key in AUTH_ERRORS){ if(msg.indexOf(key)!==-1) return AUTH_ERRORS[key]; }
+    return msg;
+  }
+
+  document.querySelectorAll(".auth-tab").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      authTab = btn.getAttribute("data-tab");
+      document.querySelectorAll(".auth-tab").forEach(function(b){ b.classList.toggle("active", b===btn); });
+      document.getElementById("authSubmitLabel").textContent = authTab==="login" ? "Se connecter" : "Créer un compte";
+      document.getElementById("authPassword").setAttribute("autocomplete", authTab==="login" ? "current-password" : "new-password");
+      document.getElementById("forgotBtn").hidden = authTab!=="login";
+      showAuthMsg("");
+    });
+  });
+
+  document.getElementById("pwToggle").addEventListener("click", function(){
+    var input = document.getElementById("authPassword");
+    var showing = input.type==="text";
+    input.type = showing ? "password" : "text";
+    document.getElementById("pwEyeIcon").innerHTML = showing
+      ? '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.6 19.6 0 0 1 4.22-5.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 7 11 7a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  });
+
+  document.getElementById("forgotBtn").addEventListener("click", function(){
+    var email = document.getElementById("authEmail").value.trim();
+    if(!email){ showAuthMsg("Renseigne d'abord ton email ci-dessus, puis clique à nouveau sur ce lien.", "error"); return; }
+    sb.auth.resetPasswordForEmail(email).then(function(res){
+      if(res.error){ showAuthMsg(frenchAuthError(res.error.message), "error"); return; }
+      showAuthMsg("Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.", "info");
+    });
+  });
+
+  function showAuthMsg(text, kind){
+    var el = document.getElementById("authMsg");
+    if(!text){ el.hidden = true; return; }
+    el.hidden = false;
+    el.className = "auth-msg" + (kind ? " "+kind : "");
+    el.textContent = text;
+  }
+
+  document.getElementById("authForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    var btn = document.getElementById("authSubmit");
+    var label = document.getElementById("authSubmitLabel");
+    var prevLabel = label.textContent;
+    btn.disabled = true;
+    label.innerHTML = '';
+    var sp = document.createElement("span");
+    sp.className = "spinner";
+    label.appendChild(sp);
+    showAuthMsg("");
+
+    var op = authTab==="login"
+      ? sb.auth.signInWithPassword({email:email, password:password})
+      : sb.auth.signUp({email:email, password:password});
+
+    op.then(function(res){
+      btn.disabled = false;
+      label.textContent = prevLabel;
+      if(res.error){
+        showAuthMsg(frenchAuthError(res.error.message), "error");
+        return;
+      }
+      if(authTab==="signup" && res.data && res.data.user && !res.data.session){
+        showAuthMsg("Compte créé ! Vérifie ta boîte mail (et les spams) pour confirmer ton adresse avant de te connecter.", "info");
+        return;
+      }
+      // signed in — onAuthStateChange handles the rest
+    });
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", function(){
+    if(isGuest){ exitApp(); } else { sb.auth.signOut(); }
+  });
+
+  function goToSignup(){
+    exitApp();
+    document.querySelectorAll(".auth-tab").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-tab")==="signup"); });
+    authTab = "signup";
+    document.getElementById("authSubmitLabel").textContent = "Créer un compte";
+    document.getElementById("forgotBtn").hidden = true;
+  }
+  document.getElementById("guestBtn").addEventListener("click", function(){ enterGuestMode(); });
+  document.getElementById("guestCreateBtn").addEventListener("click", goToSignup);
+  document.getElementById("guestBannerBtn").addEventListener("click", goToSignup);
+
+  function enterGuestMode(){
+    isGuest = true;
+    currentUser = null;
+    document.getElementById("authLoading").hidden = true;
+    document.getElementById("authGate").hidden = true;
+    document.getElementById("appShell").hidden = false;
+    document.getElementById("userEmail").textContent = "Mode invité";
+    document.getElementById("greetingName").textContent = "!";
+    document.getElementById("guestCreateBtn").hidden = false;
+    document.getElementById("guestBanner").hidden = false;
+    loadCartFromSupabase().then(function(cart){
+      state.cart = cart;
+      renderHomeStats();
+      render();
+      showPage(location.hash.slice(1) || "accueil");
+      loadLivePrices();
+    });
+  }
+
+  var cartChannel = null;
+  var cartRealtimePullTimer = null;
+  function subscribeCartRealtime(){
+    if(cartChannel){ sb.removeChannel(cartChannel); cartChannel = null; }
+    if(!currentUser || !sb.channel) return;
+    cartChannel = sb.channel("cart-"+currentUser.id)
+      .on("postgres_changes", {event:"*", schema:"public", table:"cart_items", filter:"user_id=eq."+currentUser.id}, function(){
+        // Debounced: a burst of local changes (preset applied, rapid +/-) fires many
+        // events in a row — pulling on the first one can overwrite the optimistic UI
+        // with a half-written server state. Wait for the burst to settle instead.
+        clearTimeout(cartRealtimePullTimer);
+        cartRealtimePullTimer = setTimeout(function(){
+          loadCartFromSupabase().then(function(cart){
+            state.cart = cart;
+            render();
+          });
+        }, 700);
+      })
+      .subscribe();
+  }
+  function unsubscribeCartRealtime(){
+    clearTimeout(cartRealtimePullTimer);
+    if(cartChannel){ sb.removeChannel(cartChannel); cartChannel = null; }
+  }
+
+  function enterApp(user){
+    isGuest = false;
+    currentUser = user;
+    document.getElementById("authLoading").hidden = true;
+    document.getElementById("authGate").hidden = true;
+    document.getElementById("appShell").hidden = false;
+    document.getElementById("userEmail").textContent = user.email || "";
+    document.getElementById("greetingName").textContent = user.email ? user.email.split("@")[0] : "!";
+    document.getElementById("guestCreateBtn").hidden = true;
+    document.getElementById("guestBanner").hidden = true;
+    loadCartFromSupabase().then(function(cart){
+      state.cart = cart;
+      renderHomeStats();
+      render();
+      showPage(location.hash.slice(1) || "accueil");
+      loadLivePrices();
+      subscribeCartRealtime();
+    });
+  }
+
+  function exitApp(){
+    isGuest = false;
+    currentUser = null;
+    unsubscribeCartRealtime();
+    state.cart = {};
+    document.getElementById("appShell").hidden = true;
+    document.getElementById("authLoading").hidden = true;
+    document.getElementById("authCard").hidden = false;
+    document.getElementById("authGate").hidden = false;
+    document.getElementById("authForm").reset();
+  }
+
+  renderQuickCats();
+
+  sb.auth.getSession().then(function(res){
+    var session = res.data && res.data.session;
+    if(session && session.user){ enterApp(session.user); }
+    else {
+      document.getElementById("authLoading").hidden = true;
+      document.getElementById("authCard").hidden = false;
+    }
+  }).catch(function(){
+    document.getElementById("authLoading").hidden = true;
+    document.getElementById("authCard").hidden = false;
+    showAuthMsg("Connexion au serveur impossible. Vérifie ta connexion internet et réessaie.", "error");
+  });
+
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==="SIGNED_IN" && session && session.user){ enterApp(session.user); }
+    else if(event==="SIGNED_OUT" && !isGuest){ exitApp(); }
+  });
+
+  /* ---- theme toggle ---- */
+  var THEME_KEY = "soukprix-theme";
+  function applyTheme(t){
+    if(t==="dark"||t==="light"){ document.documentElement.setAttribute("data-theme", t); }
+    else { document.documentElement.removeAttribute("data-theme"); }
+    var isDark = t==="dark" || (t!=="light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.getElementById("themeIconSun").hidden = isDark;
+    document.getElementById("themeIconMoon").hidden = !isDark;
+    document.getElementById("themeToggle").setAttribute("aria-pressed", isDark ? "true" : "false");
+  }
+  (function initTheme(){
+    var saved = null;
+    try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+    applyTheme(saved);
+  })();
+  document.getElementById("themeToggle").addEventListener("click", function(){
+    var current = document.documentElement.getAttribute("data-theme");
+    var isDarkNow = current==="dark" || (!current && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = isDarkNow ? "light" : "dark";
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    applyTheme(next);
+  });
+
+  /* ---- keyboard shortcut: "/" jumps to search ---- */
+  document.addEventListener("keydown", function(e){
+    if(e.key==="/" && document.activeElement.tagName!=="INPUT" && document.activeElement.tagName!=="TEXTAREA"){
+      e.preventDefault();
+      showPage("comparateur");
+      document.getElementById("searchInput").focus();
+    }
+  });
+
+  /* ---- coût total du catalogue par enseigne (Enseignes) ---- */
+  function renderStoreBasketChart(){
+    var el = document.getElementById("storeBasketChart");
+    if(!el) return;
+    // Fair comparison: only products every single store actually carries —
+    // otherwise a store with fewer references (BIM's fresh aisle gaps) looks
+    // artificially cheaper just by having less in the sum.
+    var common = PRODUCTS.filter(function(fam){
+      var v = fam.variants[0];
+      return STORES.every(function(s){ return v.prices[s.key]!=null; });
+    });
+    var captionEl = document.getElementById("basketChartCaption");
+    if(captionEl) captionEl.textContent = "Sur les "+common.length+" produits disponibles dans les 4 enseignes (prix par défaut, hors variantes)";
+    var totals = STORES.map(function(s){
+      var sum=0;
+      common.forEach(function(fam){ sum += fam.variants[0].prices[s.key]; });
+      return {key:s.key, label:s.label, sum:sum};
+    });
+    var max = Math.max.apply(null, totals.map(function(t){return t.sum;}));
+    var min = Math.min.apply(null, totals.map(function(t){return t.sum;}));
+    el.innerHTML = totals.map(function(t){
+      var pct = max>0 ? Math.round(t.sum/max*100) : 0;
+      var isBest = t.sum===min;
+      return '<div class="basket-row'+(isBest?' best':'')+'">'+
+        '<span class="basket-label">'+esc(t.label)+'</span>'+
+        '<div class="basket-bar-wrap"><div class="basket-bar" style="width:'+pct+'%"></div></div>'+
+        '<span class="basket-amt">'+fmt(t.sum)+' DH</span>'+
+      '</div>';
+    }).join("");
+  }
+  renderStoreBasketChart();
+
+  /* ---- PWA: install-ready service worker (activates once served over http/https) ---- */
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
